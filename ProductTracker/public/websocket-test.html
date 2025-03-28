@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebSocket测试</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .status {
+      padding: 10px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+    }
+    .connected {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .disconnected {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    .data-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .data-box {
+      flex: 1;
+      min-width: 300px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+    .data-box h3 {
+      margin-top: 0;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      overflow: auto;
+      max-height: 300px;
+    }
+    .action-panel {
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 8px 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h1>WebSocket实时数据测试</h1>
+  
+  <div id="connectionStatus" class="status disconnected">
+    未连接
+  </div>
+  
+  <div class="action-panel">
+    <button id="connectBtn">连接WebSocket</button>
+    <button id="disconnectBtn" disabled>断开连接</button>
+    <button id="getDataBtn" disabled>获取所有数据</button>
+  </div>
+  
+  <div class="data-container">
+    <div class="data-box">
+      <h3>入库数据</h3>
+      <pre id="storageData">暂无数据</pre>
+    </div>
+    <div class="data-box">
+      <h3>贴膜数据</h3>
+      <pre id="filmData">暂无数据</pre>
+    </div>
+  </div>
+  
+  <div class="data-container">
+    <div class="data-box">
+      <h3>切割数据</h3>
+      <pre id="cuttingData">暂无数据</pre>
+    </div>
+    <div class="data-box">
+      <h3>检验数据</h3>
+      <pre id="inspectionData">暂无数据</pre>
+    </div>
+  </div>
+  
+  <div class="data-container">
+    <div class="data-box">
+      <h3>出货数据</h3>
+      <pre id="shippingData">暂无数据</pre>
+    </div>
+    <div class="data-box">
+      <h3>最近更新的批次</h3>
+      <pre id="recentBatches">暂无数据</pre>
+    </div>
+  </div>
+  
+  <div class="data-box">
+    <h3>统计数据</h3>
+    <pre id="countsData">暂无数据</pre>
+  </div>
+  
+  <div class="data-box">
+    <h3>日志</h3>
+    <pre id="logData"></pre>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/socket-client-helper.js"></script>
+  <script>
+    // 自定义JSON.stringify，确保时间格式正确
+    const originalJSONStringify = JSON.stringify;
+    JSON.stringify = function(value, replacer, space) {
+      // 如果没有指定replacer，则使用我们的格式化函数
+      if (!replacer && window.SocketHelper) {
+        return originalJSONStringify(
+          window.SocketHelper.deepFormatDates(value), 
+          null, 
+          space
+        );
+      }
+      return originalJSONStringify(value, replacer, space);
+    };
+    
+    // 引用DOM元素
+    const connectBtn = document.getElementById('connectBtn');
+    const disconnectBtn = document.getElementById('disconnectBtn');
+    const getDataBtn = document.getElementById('getDataBtn');
+    const connectionStatus = document.getElementById('connectionStatus');
+    const storageData = document.getElementById('storageData');
+    const filmData = document.getElementById('filmData');
+    const cuttingData = document.getElementById('cuttingData');
+    const inspectionData = document.getElementById('inspectionData');
+    const shippingData = document.getElementById('shippingData');
+    const recentBatches = document.getElementById('recentBatches');
+    const countsData = document.getElementById('countsData');
+    const logData = document.getElementById('logData');
+    
+    // 添加日志
+    function addLog(message) {
+      const now = new Date().toLocaleTimeString();
+      logData.textContent = `[${now}] ${message}\n${logData.textContent}`;
+    }
+    
+    // 格式化时间
+    function formatTime(data) {
+      if (!data) return data;
+      
+      return window.SocketHelper.deepFormatDates(data);
+    }
+    
+    // WebSocket实例
+    let socket = null;
+    
+    // 连接WebSocket
+    connectBtn.addEventListener('click', () => {
+      // 创建WebSocket连接
+      socket = io();
+      
+      // 连接成功
+      socket.on('connect', () => {
+        connectionStatus.textContent = `已连接 (ID: ${socket.id})`;
+        connectionStatus.className = 'status connected';
+        
+        connectBtn.disabled = true;
+        disconnectBtn.disabled = false;
+        getDataBtn.disabled = false;
+        
+        addLog('WebSocket连接成功');
+      });
+      
+      // 连接错误
+      socket.on('connect_error', (error) => {
+        connectionStatus.textContent = `连接错误: ${error.message}`;
+        connectionStatus.className = 'status disconnected';
+        
+        addLog(`连接错误: ${error.message}`);
+      });
+      
+      // 断开连接
+      socket.on('disconnect', (reason) => {
+        connectionStatus.textContent = `已断开连接: ${reason}`;
+        connectionStatus.className = 'status disconnected';
+        
+        connectBtn.disabled = false;
+        disconnectBtn.disabled = true;
+        getDataBtn.disabled = true;
+        
+        addLog(`连接断开: ${reason}`);
+      });
+      
+      // 处理流程数据更新
+      socket.on('process_update', (data) => {
+        // 确保所有时间格式一致
+        data = formatTime(data);
+        
+        const { processType, records } = data;
+        
+        // 根据流程类型更新相应的数据显示
+        switch(processType) {
+          case 'storage':
+            storageData.textContent = JSON.stringify(records, null, 2);
+            break;
+          case 'film':
+            filmData.textContent = JSON.stringify(records, null, 2);
+            break;
+          case 'cutting':
+            cuttingData.textContent = JSON.stringify(records, null, 2);
+            break;
+          case 'inspection':
+            inspectionData.textContent = JSON.stringify(records, null, 2);
+            break;
+          case 'shipping':
+            shippingData.textContent = JSON.stringify(records, null, 2);
+            break;
+        }
+        
+        addLog(`收到${processType}数据更新，${records.length}条记录`);
+      });
+      
+      // 处理最近批次更新
+      socket.on('recent_batches', (data) => {
+        // 确保所有时间格式一致
+        data = formatTime(data);
+        
+        recentBatches.textContent = JSON.stringify(data, null, 2);
+        addLog(`收到最近批次更新，${data.length}条记录`);
+      });
+      
+      // 处理统计数据更新
+      socket.on('process_counts', (data) => {
+        countsData.textContent = JSON.stringify(data, null, 2);
+        addLog('收到统计数据更新');
+      });
+    });
+    
+    // 断开WebSocket连接
+    disconnectBtn.addEventListener('click', () => {
+      if (socket) {
+        socket.disconnect();
+      }
+    });
+    
+    // 请求获取所有数据
+    getDataBtn.addEventListener('click', () => {
+      if (socket && socket.connected) {
+        socket.emit('get_all_data');
+        addLog('请求获取所有数据');
+      }
+    });
+  </script>
+</body>
+</html> 
