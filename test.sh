@@ -5,7 +5,7 @@
 
 # 配置信息
 SERVER_IP="localhost:3000"  # 修改为实际服务器IP和端口
-TOTAL_BATCHES=1000          # 需要创建的批次总数
+TOTAL_BATCHES=50          # 需要创建的批次总数
 DELAY=0.3                   # 请求之间的延迟（秒）
 
 # 函数：生成批次ID (格式: 25X0001)
