@@ -106,7 +106,7 @@ class ProcessModel {
     }
     
     const [records] = await pool.execute(
-      `SELECT id, batch_id, timestamp FROM ${processMap[processType]} 
+      `SELECT * FROM ${processMap[processType]} 
        WHERE timestamp BETWEEN ? AND ?
        ORDER BY timestamp ASC`,
       [startTime, endTime]
