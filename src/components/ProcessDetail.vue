@@ -121,19 +121,7 @@ onMounted(() => {
       
       <!-- 基于不同的流程类型显示不同的额外字段 -->
       <template v-if="processType === 'storage'">
-        <el-table-column 
-          prop="material_type" 
-          label="材料类型" 
-        />
-        <el-table-column 
-          prop="quantity" 
-          label="数量(kg)" 
-          width="100"
-        />
-        <el-table-column 
-          prop="storage_location" 
-          label="存储位置" 
-        />
+        <!-- 已移除材料类型、数量(kg)和存储位置列 -->
       </template>
       
       <template v-else-if="processType === 'film'">
@@ -203,12 +191,6 @@ onMounted(() => {
           label="跟踪号" 
         />
       </template>
-      
-      <el-table-column 
-        prop="notes" 
-        label="备注" 
-        min-width="150"
-      />
     </el-table>
   </div>
 </template>

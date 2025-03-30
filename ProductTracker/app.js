@@ -49,7 +49,6 @@ app.set('io', io);
 
 // 错误处理中间件
 app.use((err, req, res, next) => {
-  console.error('服务器错误:', err);
   res.status(500).json({
     success: false,
     message: '服务器内部错误'
@@ -58,7 +57,5 @@ app.use((err, req, res, next) => {
 
 // 启动服务器
 server.listen(PORT, () => {
-  console.log(`服务器已启动，正在监听端口 ${PORT}`);
-  console.log(`访问 http://localhost:${PORT} 查看API文档`);
-  console.log(`WebSocket服务已启动`);
+  console.log(`服务器已启动，端口：${PORT}`);
 }); 

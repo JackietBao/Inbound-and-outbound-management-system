@@ -24,6 +24,8 @@ async function initDatabase() {
         id INT AUTO_INCREMENT PRIMARY KEY,
         batch_id VARCHAR(20) NOT NULL UNIQUE,
         timestamp DATETIME NOT NULL,
+        employee VARCHAR(50) NOT NULL,
+        company VARCHAR(100) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -34,6 +36,8 @@ async function initDatabase() {
         id INT AUTO_INCREMENT PRIMARY KEY,
         batch_id VARCHAR(20) NOT NULL UNIQUE,
         timestamp DATETIME NOT NULL,
+        employee VARCHAR(50) NOT NULL,
+        company VARCHAR(100) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -44,6 +48,8 @@ async function initDatabase() {
         id INT AUTO_INCREMENT PRIMARY KEY,
         batch_id VARCHAR(20) NOT NULL UNIQUE,
         timestamp DATETIME NOT NULL,
+        employee VARCHAR(50) NOT NULL,
+        company VARCHAR(100) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -54,6 +60,8 @@ async function initDatabase() {
         id INT AUTO_INCREMENT PRIMARY KEY,
         batch_id VARCHAR(20) NOT NULL UNIQUE,
         timestamp DATETIME NOT NULL,
+        employee VARCHAR(50) NOT NULL,
+        company VARCHAR(100) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -64,6 +72,8 @@ async function initDatabase() {
         id INT AUTO_INCREMENT PRIMARY KEY,
         batch_id VARCHAR(20) NOT NULL UNIQUE,
         timestamp DATETIME NOT NULL,
+        employee VARCHAR(50) NOT NULL,
+        company VARCHAR(100) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);

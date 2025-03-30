@@ -7,6 +7,8 @@ const processController = require('../controllers/process.controller');
  * @apiDescription 记录批次的操作（入库、贴膜、切割、检验、出货）
  * @apiBody {String} batchId 批次ID
  * @apiBody {String} processType 操作类型 (storage, film, cutting, inspection, shipping)
+ * @apiBody {String} employee 操作员工
+ * @apiBody {String} company 公司名称
  */
 router.post('/process', processController.recordProcess);
 
@@ -45,6 +47,12 @@ router.get('/process/export', express.json(), processController.exportExcel);
  * @apiQuery {String} endTime 结束时间 (YYYY-MM-DD HH:mm:ss)
  */
 router.get('/process/export-all', processController.exportAllProcessData);
+
+/**
+ * @api {get} /api/process/update-employee-company 更新所有记录的员工和公司信息
+ * @apiDescription 将所有记录中缺失的员工和公司信息更新为默认值
+ */
+router.get('/process/update-employee-company', processController.updateEmployeeAndCompany);
 
 /**
  * @api {get} /api/process/:batchId 获取批次所有流程数据

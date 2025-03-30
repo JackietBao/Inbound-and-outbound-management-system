@@ -17,6 +17,8 @@
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="batch_id" label="批次ID" width="150" />
         <el-table-column prop="timestamp" label="操作时间" width="180" />
+        <el-table-column prop="employee" label="员工" width="120" />
+        <el-table-column prop="company" label="公司" min-width="150" />
       </el-table>
       
       <div class="pagination-container">

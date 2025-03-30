@@ -3,26 +3,39 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebSocket测试</title>
+  <title>生产流程追踪系统</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       max-width: 1200px;
       margin: 0 auto;
       padding: 20px;
+      background-color: #f8f9fa;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 30px;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 10px;
     }
     .status {
       padding: 10px;
       margin-bottom: 20px;
       border-radius: 4px;
+      text-align: center;
+      font-weight: bold;
     }
     .connected {
       background-color: #d4edda;
       color: #155724;
+      border: 1px solid #c3e6cb;
     }
     .disconnected {
       background-color: #f8d7da;
       color: #721c24;
+      border: 1px solid #f5c6cb;
     }
     .data-container {
       display: flex;
@@ -33,14 +46,18 @@
       flex: 1;
       min-width: 300px;
       border: 1px solid #ddd;
-      border-radius: 4px;
+      border-radius: 8px;
       padding: 15px;
       margin-bottom: 20px;
+      background-color: #fff;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
     .data-box h3 {
       margin-top: 0;
       border-bottom: 1px solid #eee;
       padding-bottom: 10px;
+      color: #2c3e50;
+      font-size: 18px;
     }
     pre {
       background-color: #f5f5f5;
@@ -48,26 +65,140 @@
       border-radius: 4px;
       overflow: auto;
       max-height: 300px;
+      font-family: Consolas, Monaco, 'Andale Mono', monospace;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 10px;
+      font-size: 14px;
+      table-layout: auto;
+    }
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+      overflow: visible;
+      white-space: normal;
+    }
+    th {
+      background-color: #f2f2f2;
+      font-weight: bold;
+    }
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    tr:hover {
+      background-color: #f0f0f0;
+    }
+    th:nth-child(1), td:nth-child(1) { width: 20%; }
+    th:nth-child(2), td:nth-child(2) { width: 15%; }
+    th:nth-child(3), td:nth-child(3) { width: 20%; }
+    th:nth-child(4), td:nth-child(4) { width: 20%; }
+    th:nth-child(5), td:nth-child(5) { width: 25%; }
+    tr th:nth-child(4), tr td:nth-child(4),
+    tr th:nth-child(5), tr td:nth-child(5) {
+      background-color: #d4e6f1;
+      font-weight: bold;
+      color: #2874a6;
     }
     .action-panel {
       margin-bottom: 20px;
+      text-align: center;
     }
     button {
       padding: 8px 16px;
-      background-color: #4CAF50;
+      background-color: #3498db;
       color: white;
       border: none;
       border-radius: 4px;
       cursor: pointer;
       margin-right: 10px;
+      transition: background-color 0.3s;
     }
     button:hover {
-      background-color: #45a049;
+      background-color: #2980b9;
+    }
+    button:disabled {
+      background-color: #95a5a6;
+      cursor: not-allowed;
+    }
+    .search-panel {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background-color: #fff;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .search-panel h3 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      color: #2c3e50;
+      font-size: 18px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 8px;
+    }
+    .search-panel input, .search-panel select {
+      padding: 8px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .search-panel input:focus, .search-panel select:focus {
+      outline: none;
+      border-color: #3498db;
+      box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+    }
+    .search-panel button {
+      padding: 8px 16px;
+      margin-top: 5px;
+    }
+    .tab-container {
+      margin-bottom: 20px;
+    }
+    .tab-buttons {
+      display: flex;
+      border-bottom: 1px solid #ddd;
+      margin-bottom: 15px;
+    }
+    .tab-button {
+      padding: 10px 20px;
+      background-color: #f8f9fa;
+      border: 1px solid #ddd;
+      border-bottom: none;
+      border-radius: 4px 4px 0 0;
+      margin-right: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      color: #7f8c8d;
+    }
+    .tab-button.active {
+      background-color: #fff;
+      color: #3498db;
+      border-bottom: 2px solid #3498db;
+    }
+    .tab-content {
+      display: none;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+      background-color: #fff;
+    }
+    .tab-content.active {
+      display: block;
     }
   </style>
 </head>
 <body>
-  <h1>WebSocket实时数据测试</h1>
+  <h1>生产流程追踪系统</h1>
   
   <div id="connectionStatus" class="status disconnected">
     未连接
@@ -77,6 +208,73 @@
     <button id="connectBtn">连接WebSocket</button>
     <button id="disconnectBtn" disabled>断开连接</button>
     <button id="getDataBtn" disabled>获取所有数据</button>
+    <button id="updateDataBtn">更新员工公司信息</button>
+  </div>
+  
+  <div class="tab-container">
+    <div class="tab-buttons">
+      <div class="tab-button active" data-tab="record-tab">记录批次操作</div>
+      <div class="tab-button" data-tab="query-tab">批次查询</div>
+      <div class="tab-button" data-tab="export-tab">数据导出</div>
+    </div>
+    
+    <div id="record-tab" class="tab-content active">
+      <div class="search-panel">
+        <h3>记录批次操作</h3>
+        <input type="text" id="recordBatchIdInput" placeholder="输入批次ID">
+        <select id="recordProcessTypeSelect">
+          <option value="">选择流程类型</option>
+          <option value="storage">入库</option>
+          <option value="film">贴膜</option>
+          <option value="cutting">切割</option>
+          <option value="inspection">检验</option>
+          <option value="shipping">出货</option>
+        </select>
+        <input type="text" id="employeeInput" placeholder="操作员工">
+        <input type="text" id="companyInput" placeholder="公司名称">
+        <button id="recordBtn">记录操作</button>
+      </div>
+    </div>
+    
+    <div id="query-tab" class="tab-content">
+      <div class="search-panel">
+        <h3>批次查询</h3>
+        <input type="text" id="batchIdInput" placeholder="输入批次ID">
+        <select id="processTypeSelect">
+          <option value="">选择流程类型</option>
+          <option value="storage">入库</option>
+          <option value="film">贴膜</option>
+          <option value="cutting">切割</option>
+          <option value="inspection">检验</option>
+          <option value="shipping">出货</option>
+        </select>
+        <button id="searchBtn">查询</button>
+        <button id="getBatchDataBtn">获取批次所有流程数据</button>
+      </div>
+      
+      <div class="data-box">
+        <h3>批次查询结果</h3>
+        <pre id="batchQueryResult">暂无数据</pre>
+      </div>
+    </div>
+    
+    <div id="export-tab" class="tab-content">
+      <div class="search-panel">
+        <h3>数据导出</h3>
+        <select id="exportProcessTypeSelect">
+          <option value="">选择流程类型</option>
+          <option value="storage">入库</option>
+          <option value="film">贴膜</option>
+          <option value="cutting">切割</option>
+          <option value="inspection">检验</option>
+          <option value="shipping">出货</option>
+          <option value="all">所有流程</option>
+        </select>
+        <input type="datetime-local" id="exportStartTime">
+        <input type="datetime-local" id="exportEndTime">
+        <button id="exportBtn">导出Excel</button>
+      </div>
+    </div>
   </div>
   
   <div class="data-container">
@@ -143,6 +341,20 @@
     const connectBtn = document.getElementById('connectBtn');
     const disconnectBtn = document.getElementById('disconnectBtn');
     const getDataBtn = document.getElementById('getDataBtn');
+    const updateDataBtn = document.getElementById('updateDataBtn');
+    const searchBtn = document.getElementById('searchBtn');
+    const getBatchDataBtn = document.getElementById('getBatchDataBtn');
+    const recordBtn = document.getElementById('recordBtn');
+    const recordBatchIdInput = document.getElementById('recordBatchIdInput');
+    const recordProcessTypeSelect = document.getElementById('recordProcessTypeSelect');
+    const employeeInput = document.getElementById('employeeInput');
+    const companyInput = document.getElementById('companyInput');
+    const batchIdInput = document.getElementById('batchIdInput');
+    const processTypeSelect = document.getElementById('processTypeSelect');
+    const exportProcessTypeSelect = document.getElementById('exportProcessTypeSelect');
+    const exportStartTime = document.getElementById('exportStartTime');
+    const exportEndTime = document.getElementById('exportEndTime');
+    const exportBtn = document.getElementById('exportBtn');
     const connectionStatus = document.getElementById('connectionStatus');
     const storageData = document.getElementById('storageData');
     const filmData = document.getElementById('filmData');
@@ -151,6 +363,7 @@
     const shippingData = document.getElementById('shippingData');
     const recentBatches = document.getElementById('recentBatches');
     const countsData = document.getElementById('countsData');
+    const batchQueryResult = document.getElementById('batchQueryResult');
     const logData = document.getElementById('logData');
     
     // 添加日志
@@ -164,6 +377,250 @@
       if (!data) return data;
       
       return window.SocketHelper.deepFormatDates(data);
+    }
+    
+    // 格式化流程数据，突出显示员工和公司信息
+    function formatProcessData(records) {
+      if (!records || records.length === 0) {
+        return "暂无数据";
+      }
+      
+      const formatted = records.map(record => {
+        return {
+          批次ID: record.batch_id,
+          时间: record.timestamp,
+          操作员工: record.employee || "未知",
+          公司: record.company || "未知",
+          ID: record.id
+        };
+      });
+      
+      return JSON.stringify(formatted, null, 2);
+    }
+    
+    // 格式化流程数据为HTML表格
+    function formatProcessDataAsTable(records, includeProcess = false) {
+      if (!records || records.length === 0) {
+        console.log('无数据记录，返回空表格');
+        return "<p>暂无数据</p>";
+      }
+      
+      // 将渲染前的完整记录输出到控制台，便于调试
+      console.log('表格渲染的数据:', JSON.stringify(records));
+      
+      // 表格开始
+      let html = '<div style="overflow-x:auto;width:100%;">'; // 添加水平滚动容器
+      html += '<table>';
+      
+      // 表头
+      html += '<thead><tr>';
+      if (includeProcess) {
+        html += '<th>批次ID</th><th>流程</th><th>时间</th>';
+      } else {
+        html += '<th>批次ID</th><th>时间</th>';
+      }
+      // 明确添加员工和公司列
+      html += '<th style="background-color:#d4e6f1;">员工</th><th style="background-color:#d4e6f1;">公司</th>';
+      html += '</tr></thead>';
+      
+      // 表格内容
+      html += '<tbody>';
+      records.forEach((record, index) => {
+        // 确保字段存在
+        const safeRecord = {
+          batch_id: record.batch_id || record.batchId || '',
+          processName: record.processName || '',
+          timestamp: record.timestamp || '',
+          employee: record.employee || '未知',
+          company: record.company || '未知'
+        };
+        
+        if (index === 0) {
+          console.log('表格第一行数据:', JSON.stringify(safeRecord));
+        }
+        
+        html += '<tr>';
+        // 基本列
+        if (includeProcess) {
+          html += `<td>${safeRecord.batch_id}</td>`;
+          html += `<td>${safeRecord.processName}</td>`;
+          html += `<td>${safeRecord.timestamp}</td>`;
+        } else {
+          html += `<td>${safeRecord.batch_id}</td>`;
+          html += `<td>${safeRecord.timestamp}</td>`;
+        }
+        
+        // 明确添加员工和公司列，使用特殊样式
+        html += `<td style="background-color:#d4e6f1;color:#2874a6;font-weight:bold;">${safeRecord.employee}</td>`;
+        html += `<td style="background-color:#d4e6f1;color:#2874a6;font-weight:bold;">${safeRecord.company}</td>`;
+        html += '</tr>';
+      });
+      html += '</tbody>';
+      
+      // 表格结束
+      html += '</table>';
+      html += '</div>'; // 关闭水平滚动容器
+      
+      // 输出最终生成的HTML表格，便于调试
+      console.log('生成的HTML表格:' + (html.length > 300 ? html.substring(0, 300) + '...' : html));
+      
+      return html;
+    }
+    
+    // 格式化批次查询结果
+    function formatBatchQueryResult(data) {
+      if (!data) return "暂无数据";
+      
+      if (Array.isArray(data)) {
+        return formatProcessData(data);
+      } else if (typeof data === 'object') {
+        const result = {};
+        for (const key in data) {
+          if (data[key]) {
+            result[getProcessDisplayName(key)] = {
+              时间: data[key].timestamp,
+              操作员工: data[key].employee || "未知",
+              公司: data[key].company || "未知"
+            };
+          } else {
+            result[getProcessDisplayName(key)] = null;
+          }
+        }
+        return JSON.stringify(result, null, 2);
+      }
+      
+      return JSON.stringify(data, null, 2);
+    }
+    
+    // 获取流程类型的显示名称
+    function getProcessDisplayName(processType) {
+      const nameMap = {
+        'storage': '入库',
+        'film': '贴膜',
+        'cutting': '切割',
+        'inspection': '检验',
+        'shipping': '出货'
+      };
+      return nameMap[processType] || processType;
+    }
+    
+    // 查询批次数据
+    async function queryBatchData() {
+      const batchId = batchIdInput.value.trim();
+      const processType = processTypeSelect.value;
+      
+      if (!batchId || !processType) {
+        addLog('请输入批次ID和选择流程类型');
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/process/batch?batchId=${encodeURIComponent(batchId)}&processType=${encodeURIComponent(processType)}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          batchQueryResult.innerHTML = formatProcessDataAsTable(result.data);
+          addLog(`查询成功: 批次${batchId}的${processType}数据`);
+        } else {
+          batchQueryResult.textContent = JSON.stringify(result, null, 2);
+          addLog(`查询失败: ${result.message}`);
+        }
+      } catch (error) {
+        batchQueryResult.textContent = JSON.stringify({ error: error.message }, null, 2);
+        addLog(`查询出错: ${error.message}`);
+      }
+    }
+    
+    // 获取批次所有流程数据
+    async function getBatchAllData() {
+      const batchId = batchIdInput.value.trim();
+      
+      if (!batchId) {
+        addLog('请输入批次ID');
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/process/${batchId}`);
+        const result = await response.json();
+        
+        if (result.success) {
+          // 显示为表格
+          let html = '<h4>批次流程数据</h4>';
+          
+          for (const processType in result.data) {
+            if (result.data[processType]) {
+              const record = result.data[processType];
+              html += `<h5>${getProcessDisplayName(processType)}</h5>`;
+              
+              // 添加水平滚动容器
+              html += '<div style="overflow-x:auto;width:100%;">';
+              html += '<table>';
+              
+              // 表头
+              html += '<thead><tr>';
+              html += '<th>批次ID</th><th>时间</th>';
+              // 明确添加员工和公司列
+              html += '<th style="background-color:#d4e6f1;">员工</th><th style="background-color:#d4e6f1;">公司</th>';
+              html += '</tr></thead>';
+              
+              // 表体
+              html += '<tbody><tr>';
+              html += `<td>${record.batch_id || ''}</td>`;
+              html += `<td>${record.timestamp || ''}</td>`;
+              // 明确添加员工和公司单元格
+              html += `<td style="background-color:#d4e6f1;color:#2874a6;font-weight:bold;">${record.employee || '未知'}</td>`;
+              html += `<td style="background-color:#d4e6f1;color:#2874a6;font-weight:bold;">${record.company || '未知'}</td>`;
+              html += '</tr></tbody>';
+              
+              html += '</table></div>';
+            }
+          }
+          
+          batchQueryResult.innerHTML = html;
+          addLog(`获取成功: 批次${batchId}的所有流程数据`);
+        } else {
+          batchQueryResult.textContent = JSON.stringify(result, null, 2);
+          addLog(`获取失败: ${result.message}`);
+        }
+      } catch (error) {
+        batchQueryResult.textContent = JSON.stringify({ error: error.message }, null, 2);
+        addLog(`获取出错: ${error.message}`);
+      }
+    }
+    
+    // 导出数据为Excel
+    async function exportData() {
+      const processType = exportProcessTypeSelect.value;
+      const startTime = exportStartTime.value ? new Date(exportStartTime.value).toISOString().replace('T', ' ').substring(0, 19) : '';
+      const endTime = exportEndTime.value ? new Date(exportEndTime.value).toISOString().replace('T', ' ').substring(0, 19) : '';
+      
+      if (!processType || !startTime || !endTime) {
+        addLog('请选择流程类型并设置开始和结束时间');
+        return;
+      }
+      
+      try {
+        let url;
+        if (processType === 'all') {
+          url = `/api/process/export-all?startTime=${encodeURIComponent(startTime)}&endTime=${encodeURIComponent(endTime)}`;
+        } else {
+          url = `/api/process/export?processType=${encodeURIComponent(processType)}&startTime=${encodeURIComponent(startTime)}&endTime=${encodeURIComponent(endTime)}`;
+        }
+        
+        // 打开新窗口下载文件
+        window.open(url, '_blank');
+        
+        addLog(`已开始导出${processType === 'all' ? '所有流程' : processType}数据`);
+      } catch (error) {
+        addLog(`导出出错: ${error.message}`);
+      }
     }
     
     // WebSocket实例
@@ -213,22 +670,37 @@
         
         const { processType, records } = data;
         
+        // 日志输出接收到的数据
+        console.log(`收到${processType}数据更新，记录数: ${records.length}`);
+        if (records.length > 0) {
+          console.log(`${processType}首条数据:`, records[0]);
+        }
+        
+        // 确保每条记录都有员工和公司字段
+        const enhancedRecords = records.map(record => ({
+          ...record,
+          employee: record.employee || '未知',
+          company: record.company || '未知'
+        }));
+        
+        console.log(`${processType}数据处理后:`, enhancedRecords.length > 0 ? enhancedRecords[0] : '无数据');
+        
         // 根据流程类型更新相应的数据显示
         switch(processType) {
           case 'storage':
-            storageData.textContent = JSON.stringify(records, null, 2);
+            storageData.innerHTML = formatProcessDataAsTable(enhancedRecords);
             break;
           case 'film':
-            filmData.textContent = JSON.stringify(records, null, 2);
+            filmData.innerHTML = formatProcessDataAsTable(enhancedRecords);
             break;
           case 'cutting':
-            cuttingData.textContent = JSON.stringify(records, null, 2);
+            cuttingData.innerHTML = formatProcessDataAsTable(enhancedRecords);
             break;
           case 'inspection':
-            inspectionData.textContent = JSON.stringify(records, null, 2);
+            inspectionData.innerHTML = formatProcessDataAsTable(enhancedRecords);
             break;
           case 'shipping':
-            shippingData.textContent = JSON.stringify(records, null, 2);
+            shippingData.innerHTML = formatProcessDataAsTable(enhancedRecords);
             break;
         }
         
@@ -240,13 +712,43 @@
         // 确保所有时间格式一致
         data = formatTime(data);
         
-        recentBatches.textContent = JSON.stringify(data, null, 2);
+        // 日志输出接收到的数据
+        console.log(`收到最近批次更新，记录数: ${data.length}`);
+        console.log('最近批次数据详情:', JSON.stringify(data));
+        
+        // 确保每条记录都有员工和公司字段
+        const enhancedData = data.map(record => ({
+          ...record,
+          employee: record.employee || '未知',
+          company: record.company || '未知'
+        }));
+        
+        // 显示为表格，包含流程列
+        const tableHTML = formatProcessDataAsTable(enhancedData, true);
+        console.log("更新最近批次表格HTML");
+        
+        // 在更新前后分别检查DOM元素
+        console.log("更新前recentBatches内容:", recentBatches.innerHTML.substring(0, 100) + "...");
+        recentBatches.innerHTML = tableHTML;
+        console.log("更新后recentBatches内容:", recentBatches.innerHTML.substring(0, 100) + "...");
+        
         addLog(`收到最近批次更新，${data.length}条记录`);
       });
       
       // 处理统计数据更新
       socket.on('process_counts', (data) => {
-        countsData.textContent = JSON.stringify(data, null, 2);
+        // 格式化统计数据为表格
+        let html = '<table>';
+        html += '<tr><th>流程</th><th>数量</th></tr>';
+        html += `<tr><td>入库</td><td>${data.storage || 0}</td></tr>`;
+        html += `<tr><td>贴膜</td><td>${data.film || 0}</td></tr>`;
+        html += `<tr><td>切割</td><td>${data.cutting || 0}</td></tr>`;
+        html += `<tr><td>检验</td><td>${data.inspection || 0}</td></tr>`;
+        html += `<tr><td>出货</td><td>${data.shipping || 0}</td></tr>`;
+        html += `<tr><td><strong>总计</strong></td><td><strong>${Object.values(data).reduce((sum, count) => sum + count, 0)}</strong></td></tr>`;
+        html += '</table>';
+        
+        countsData.innerHTML = html;
         addLog('收到统计数据更新');
       });
     });
@@ -265,6 +767,96 @@
         addLog('请求获取所有数据');
       }
     });
+    
+    // 批次查询按钮点击事件
+    searchBtn.addEventListener('click', queryBatchData);
+    
+    // 获取批次所有流程数据按钮点击事件
+    getBatchDataBtn.addEventListener('click', getBatchAllData);
+    
+    // 导出按钮点击事件
+    exportBtn.addEventListener('click', exportData);
+    
+    // 记录批次操作
+    async function recordBatchProcess() {
+      const batchId = recordBatchIdInput.value.trim();
+      const processType = recordProcessTypeSelect.value;
+      const employee = employeeInput.value.trim();
+      const company = companyInput.value.trim();
+      
+      if (!batchId || !processType || !employee || !company) {
+        addLog('请填写完整的批次操作信息');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/process', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            batchId,
+            processType,
+            employee,
+            company
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          addLog(`成功记录: 批次${batchId}的${processType}操作`);
+          // 清空输入框
+          recordBatchIdInput.value = '';
+          recordProcessTypeSelect.value = '';
+          employeeInput.value = '';
+          companyInput.value = '';
+        } else {
+          addLog(`记录失败: ${result.message}`);
+        }
+      } catch (error) {
+        addLog(`记录出错: ${error.message}`);
+      }
+    }
+    
+    // 记录批次操作按钮点击事件
+    recordBtn.addEventListener('click', recordBatchProcess);
+    
+    // 更新员工和公司信息按钮点击事件
+    updateDataBtn.addEventListener('click', updateEmployeeAndCompany);
+    
+    // 添加Tab切换功能
+    document.querySelectorAll('.tab-button').forEach(button => {
+      button.addEventListener('click', () => {
+        // 移除所有tab的active类
+        document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
+        // 为当前tab添加active类
+        button.classList.add('active');
+        const tabId = button.getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active');
+      });
+    });
+
+    // 更新所有记录的员工和公司信息
+    async function updateEmployeeAndCompany() {
+      try {
+        addLog('开始更新员工和公司信息...');
+        
+        const response = await fetch('/api/process/update-employee-company');
+        const result = await response.json();
+        
+        if (result.success) {
+          addLog(`更新成功: ${result.message}`);
+        } else {
+          addLog(`更新失败: ${result.message}`);
+        }
+      } catch (error) {
+        addLog(`更新出错: ${error.message}`);
+      }
+    }
   </script>
 </body>
 </html> 

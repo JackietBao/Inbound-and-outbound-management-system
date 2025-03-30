@@ -20,7 +20,7 @@ class ProcessController {
   // 记录批次操作
   async recordProcess(req, res) {
     try {
-      const { batchId, processType } = req.body;
+      const { batchId, processType, employee, company } = req.body;
       
       // 验证参数
       if (!batchId || !processType) {
@@ -30,7 +30,14 @@ class ProcessController {
         });
       }
       
-      const result = await processModel.recordProcess(batchId, processType);
+      if (!employee || !company) {
+        return res.status(400).json({
+          success: false,
+          message: '员工和公司信息不能为空'
+        });
+      }
+      
+      const result = await processModel.recordProcess(batchId, processType, employee, company);
       
       // 通知WebSocket客户端数据已更新
       await socketController.notifyProcessUpdate(processType);
@@ -266,7 +273,9 @@ class ProcessController {
         worksheet.columns = [
           { header: 'ID', key: 'id', width: 10 },
           { header: '批次ID', key: 'batch_id', width: 20 },
-          { header: '时间', key: 'timestamp', width: 20 }
+          { header: '时间', key: 'timestamp', width: 20 },
+          { header: '员工', key: 'employee', width: 15 },
+          { header: '公司', key: 'company', width: 25 }
         ];
         
         // 查询数据
@@ -280,7 +289,9 @@ class ProcessController {
           worksheet.addRow({
             id: record.id,
             batch_id: record.batch_id,
-            timestamp: formattedTimestamp
+            timestamp: formattedTimestamp,
+            employee: record.employee || '未知',
+            company: record.company || '未知'
           });
         });
       }
@@ -303,6 +314,30 @@ class ProcessController {
       res.status(500).json({
         success: false,
         message: '导出所有流程数据失败',
+        error: error.message
+      });
+    }
+  }
+
+  /**
+   * 更新所有记录的员工和公司信息
+   * @param {Object} req - 请求对象
+   * @param {Object} res - 响应对象
+   */
+  async updateEmployeeAndCompany(req, res) {
+    try {
+      const result = await processModel.updateAllEmployeeAndCompany();
+      
+      // 更新完成后，通知所有客户端更新数据
+      for (const processType of ['storage', 'film', 'cutting', 'inspection', 'shipping']) {
+        await socketController.notifyProcessUpdate(processType);
+      }
+      
+      return res.status(200).json(result);
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: '更新员工和公司信息失败',
         error: error.message
       });
     }

@@ -20,7 +20,7 @@ function formatDateTime(timestamp) {
 
 class ProcessModel {
   // 记录批次操作
-  async recordProcess(batchId, processType) {
+  async recordProcess(batchId, processType, employee, company) {
     const connection = await pool.getConnection();
     
     try {
@@ -47,10 +47,10 @@ class ProcessModel {
       // 记录当前时间
       const now = moment().format('YYYY-MM-DD HH:mm:ss');
       
-      // 插入记录
+      // 插入记录，增加employee和company字段
       await connection.execute(
-        `INSERT INTO ${processMap[processType]} (batch_id, timestamp) VALUES (?, ?)`,
-        [batchId, now]
+        `INSERT INTO ${processMap[processType]} (batch_id, timestamp, employee, company) VALUES (?, ?, ?, ?)`,
+        [batchId, now, employee, company]
       );
       
       await connection.commit();
@@ -106,16 +106,18 @@ class ProcessModel {
     }
     
     const [records] = await pool.execute(
-      `SELECT * FROM ${processMap[processType]} 
+      `SELECT id, batch_id, timestamp, employee, company FROM ${processMap[processType]} 
        WHERE timestamp BETWEEN ? AND ?
        ORDER BY timestamp ASC`,
       [startTime, endTime]
     );
     
-    // 在返回之前格式化所有时间戳为字符串
+    // 在返回之前格式化所有时间戳为字符串，确保employee和company字段存在
     return records.map(record => ({
       ...record,
-      timestamp: formatDateTime(record.timestamp)
+      timestamp: formatDateTime(record.timestamp),
+      employee: record.employee || '未知',
+      company: record.company || '未知'
     }));
   }
   
@@ -125,7 +127,7 @@ class ProcessModel {
     
     for (const process of processSequence) {
       const [records] = await pool.execute(
-        `SELECT * FROM ${processMap[process]} WHERE batch_id = ?`,
+        `SELECT id, batch_id, timestamp, employee, company FROM ${processMap[process]} WHERE batch_id = ?`,
         [batchId]
       );
       
@@ -135,6 +137,9 @@ class ProcessModel {
         if (record.timestamp) {
           record.timestamp = formatDateTime(record.timestamp);
         }
+        // 确保employee和company字段存在
+        record.employee = record.employee || '未知';
+        record.company = record.company || '未知';
         result[process] = record;
       } else {
         result[process] = null;
@@ -151,16 +156,43 @@ class ProcessModel {
     }
     
     const [records] = await pool.execute(
-      `SELECT id, batch_id, timestamp FROM ${processMap[processType]} 
+      `SELECT id, batch_id, timestamp, employee, company FROM ${processMap[processType]} 
        WHERE batch_id = ?`,
       [batchId]
     );
     
-    // 在返回之前格式化所有时间戳为字符串
+    // 在返回之前格式化所有时间戳为字符串，确保employee和company字段存在
     return records.map(record => ({
       ...record,
-      timestamp: formatDateTime(record.timestamp)
+      timestamp: formatDateTime(record.timestamp),
+      employee: record.employee || '未知',
+      company: record.company || '未知'
     }));
+  }
+
+  // 更新所有记录的员工和公司信息
+  async updateAllEmployeeAndCompany() {
+    const connection = await pool.getConnection();
+    
+    try {
+      await connection.beginTransaction();
+      
+      for (const processType of Object.keys(processMap)) {
+        await connection.execute(
+          `UPDATE ${processMap[processType]} SET employee = '系统用户', company = '系统记录' WHERE employee = '未知' OR employee IS NULL OR company = '未知' OR company IS NULL`
+        );
+        console.log(`已更新${processType}表的员工和公司信息`);
+      }
+      
+      await connection.commit();
+      return { success: true, message: "所有表的员工和公司信息已更新" };
+    } catch (error) {
+      await connection.rollback();
+      console.error('更新员工和公司信息失败:', error);
+      throw error;
+    } finally {
+      connection.release();
+    }
   }
 }
 

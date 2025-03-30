@@ -19,6 +19,30 @@
           </el-select>
         </el-form-item>
         
+        <el-form-item label="批次ID">
+          <el-input
+            v-model="exportForm.batchId"
+            placeholder="输入批次ID"
+            clearable
+          />
+        </el-form-item>
+        
+        <el-form-item label="员工">
+          <el-input
+            v-model="exportForm.employee"
+            placeholder="输入员工姓名"
+            clearable
+          />
+        </el-form-item>
+        
+        <el-form-item label="公司">
+          <el-input
+            v-model="exportForm.company"
+            placeholder="输入公司名称"
+            clearable
+          />
+        </el-form-item>
+        
         <el-form-item label="时间范围">
           <el-date-picker
             v-model="exportForm.timeRange"
@@ -73,7 +97,7 @@
       
       <div v-if="searchResults.length > 0" class="search-results">
         <h3>查询结果 (共 {{ searchResults.length }} 条)</h3>
-        <p class="time-range-info">
+        <p v-if="exportForm.timeRange && exportForm.timeRange[0] && exportForm.timeRange[1]" class="time-range-info">
           筛选时间范围：{{ exportForm.timeRange[0] }} 至 {{ exportForm.timeRange[1] }}
         </p>
         <el-table 
@@ -82,7 +106,7 @@
           stripe 
           style="width: 100%" 
           max-height="400"
-          :default-sort="{prop: 'timestamp', order: 'descending'}"
+          :default-sort="{prop: 'id', order: 'ascending'}"
         >
           <!-- 基础共通字段 -->
           <el-table-column 
@@ -103,55 +127,26 @@
             width="180" 
             sortable
           />
+          <el-table-column 
+            prop="employee" 
+            label="员工" 
+            width="120" 
+            sortable
+          />
+          <el-table-column 
+            prop="company" 
+            label="公司" 
+            min-width="150" 
+            sortable
+          />
           
+          <!-- 移除所有流程特定字段 -->
           <!-- 入库流程特定字段 -->
-          <template v-if="exportForm.processType === 'storage'">
-            <el-table-column prop="material_type" label="材料类型" sortable />
-            <el-table-column prop="quantity" label="数量(kg)" sortable />
-            <el-table-column prop="storage_location" label="存储位置" sortable />
-            <el-table-column prop="supplier" label="供应商" sortable />
-          </template>
-          
           <!-- 覆膜流程特定字段 -->
-          <template v-if="exportForm.processType === 'film'">
-            <el-table-column prop="film_type" label="覆膜类型" sortable />
-            <el-table-column prop="machine_id" label="机器ID" sortable />
-            <el-table-column prop="duration" label="处理时间(分钟)" sortable />
-            <el-table-column prop="operator" label="操作员" sortable />
-          </template>
-          
           <!-- 裁切流程特定字段 -->
-          <template v-if="exportForm.processType === 'cutting'">
-            <el-table-column prop="width" label="宽度(mm)" sortable />
-            <el-table-column prop="length" label="长度(m)" sortable />
-            <el-table-column prop="machine_id" label="机器ID" sortable />
-            <el-table-column prop="roll_count" label="卷数" sortable />
-          </template>
-          
           <!-- 质检流程特定字段 -->
-          <template v-if="exportForm.processType === 'inspection'">
-            <el-table-column prop="quality_grade" label="质量等级" sortable />
-            <el-table-column prop="defect_count" label="缺陷数量" sortable />
-            <el-table-column prop="pass_status" label="是否通过" sortable>
-              <template #default="scope">
-                <el-tag :type="scope.row.pass_status ? 'success' : 'danger'">
-                  {{ scope.row.pass_status ? '通过' : '不通过' }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="inspector" label="检验员" sortable />
-          </template>
-          
           <!-- 出库流程特定字段 -->
-          <template v-if="exportForm.processType === 'shipping'">
-            <el-table-column prop="destination" label="目的地" sortable />
-            <el-table-column prop="carrier" label="承运商" sortable />
-            <el-table-column prop="tracking_number" label="跟踪号" sortable />
-            <el-table-column prop="package_count" label="包装数量" sortable />
-          </template>
-          
           <!-- 备注字段 -->
-          <el-table-column prop="notes" label="备注" min-width="120" />
         </el-table>
         
         <!-- 添加分页功能 -->
@@ -180,7 +175,7 @@
       
       <el-empty 
         v-if="!loading && !searchResults.length && !searchError" 
-        description="暂无数据，请选择时间范围并点击查询按钮"
+        description="暂无数据，请输入筛选条件并点击查询按钮"
       />
     </el-card>
   </template>
@@ -280,7 +275,10 @@
       // 导出表单
       const exportForm = reactive({
         processType: 'storage',
-        timeRange: null
+        timeRange: null,
+        employee: '',
+        company: '',
+        batchId: ''
       })
       
       // 获取今天的开始和结束时间 (上海时区)
@@ -296,35 +294,126 @@
       
       // 处理查询 - 使用后端API
       const handleSearch = () => {
-        if (!exportForm.timeRange || !exportForm.timeRange[0] || !exportForm.timeRange[1]) {
-          ElMessage.warning('请选择时间范围')
+        // 检查是否至少有一个筛选条件
+        if (!exportForm.timeRange && !exportForm.batchId && !exportForm.employee && !exportForm.company) {
+          ElMessage.warning('请至少输入一个筛选条件(批次ID、员工、公司或时间范围)')
           return
         }
         
-        if (exportForm.processType === 'all') {
-          ElMessage.warning('查询时请选择具体的流程类型')
+        if (exportForm.processType === 'all' && !exportForm.batchId) {
+          ElMessage.warning('选择"所有流程"时，请至少输入批次ID进行筛选')
           return
         }
         
-        // 解析用户选择的时间，并明确指定为上海时区
-        const startTime = moment.tz(exportForm.timeRange[0], 'YYYY-MM-DD HH:mm:ss', SHANGHAI_TZ).format('YYYY-MM-DD HH:mm:ss')
-        const endTime = moment.tz(exportForm.timeRange[1], 'YYYY-MM-DD HH:mm:ss', SHANGHAI_TZ).format('YYYY-MM-DD HH:mm:ss')
+        let startTime = null
+        let endTime = null
         
-        console.log('筛选时间范围 (上海时区):', startTime, '至', endTime)
+        // 如果设置了时间范围，则处理时间
+        if (exportForm.timeRange && exportForm.timeRange[0] && exportForm.timeRange[1]) {
+          // 解析用户选择的时间，并明确指定为上海时区
+          startTime = moment.tz(exportForm.timeRange[0], 'YYYY-MM-DD HH:mm:ss', SHANGHAI_TZ).format('YYYY-MM-DD HH:mm:ss')
+          endTime = moment.tz(exportForm.timeRange[1], 'YYYY-MM-DD HH:mm:ss', SHANGHAI_TZ).format('YYYY-MM-DD HH:mm:ss')
+          console.log('筛选时间范围 (上海时区):', startTime, '至', endTime)
+        }
         
         loading.value = true
         searchError.value = ''
         
+        // 构建筛选条件
+        const filters = {};
+        if (exportForm.batchId) {
+          filters.batch_id = exportForm.batchId.trim();
+          console.log('批次ID筛选条件:', filters.batch_id);
+        }
+        if (exportForm.employee) {
+          filters.employee = exportForm.employee.trim();
+        }
+        if (exportForm.company) {
+          filters.company = exportForm.company.trim();
+        }
+        
+        console.log('发送查询请求:', exportForm.processType, filters);
+        
         // 调用后端API获取数据
-        getProcessData(exportForm.processType, startTime, endTime)
+        getProcessData(exportForm.processType, startTime, endTime, filters)
           .then(response => {
+            console.log('API响应数据:', response.data);
+            
             if (response.data && response.data.success) {
-              searchResults.value = response.data.data
+              let results = response.data.data;
+              
+              // 前端严格筛选逻辑
+              // 1. 批次ID筛选
+              if (exportForm.batchId) {
+                const batchIdTrim = exportForm.batchId.trim();
+                results = results.filter(item => 
+                  item.batch_id === batchIdTrim
+                );
+                
+                if (results.length === 0) {
+                  console.log(`没有找到批次ID为 "${batchIdTrim}" 的记录`);
+                }
+                
+                console.log('批次ID筛选后结果:', results);
+              }
+              
+              // 2. 员工筛选
+              if (exportForm.employee) {
+                const employeeTrim = exportForm.employee.trim();
+                results = results.filter(item => 
+                  item.employee === employeeTrim
+                );
+                
+                if (results.length === 0) {
+                  console.log(`没有找到员工为 "${employeeTrim}" 的记录`);
+                }
+                
+                console.log('员工筛选后结果:', results);
+              }
+              
+              // 3. 公司筛选
+              if (exportForm.company) {
+                const companyTrim = exportForm.company.trim();
+                results = results.filter(item => 
+                  item.company === companyTrim
+                );
+                
+                if (results.length === 0) {
+                  console.log(`没有找到公司为 "${companyTrim}" 的记录`);
+                }
+                
+                console.log('公司筛选后结果:', results);
+              }
+              
+              searchResults.value = results;
               
               if (searchResults.value.length === 0) {
-                ElMessage.info('没有找到符合条件的数据')
+                // 构建详细的提示消息
+                let noResultsMsg = '没有找到符合';
+                const conditions = [];
+                
+                if (exportForm.batchId) conditions.push(`批次ID为"${exportForm.batchId.trim()}"`);
+                if (exportForm.employee) conditions.push(`员工为"${exportForm.employee.trim()}"`);
+                if (exportForm.company) conditions.push(`公司为"${exportForm.company.trim()}"`);
+                
+                if (conditions.length > 0) {
+                  noResultsMsg += conditions.join('且') + '的记录';
+                } else {
+                  noResultsMsg += '条件的数据';
+                }
+                
+                // 添加流程类型信息
+                const processTypeText = exportForm.processType === 'storage' ? '入库' : 
+                  exportForm.processType === 'film' ? '贴膜' : 
+                  exportForm.processType === 'cutting' ? '切割' : 
+                  exportForm.processType === 'inspection' ? '检验' : 
+                  exportForm.processType === 'shipping' ? '出货' : '所有';
+                  
+                noResultsMsg += `（在"${processTypeText}流程"中）`;
+                
+                ElMessage.info(noResultsMsg);
               } else {
-                ElMessage.success(`查询成功，共找到 ${searchResults.value.length} 条记录`)
+                ElMessage.success(`查询成功，共找到 ${searchResults.value.length} 条记录`);
               }
             } else {
               searchError.value = response.data?.message || '查询失败'
@@ -345,38 +434,55 @@
       
       // 处理导出 - 仍使用API导出
       const handleExport = async () => {
-        if (!exportForm.timeRange || !exportForm.timeRange[0] || !exportForm.timeRange[1]) {
-          ElMessage.warning('请选择时间范围')
+        // 检查是否至少有一个筛选条件
+        if (!exportForm.timeRange && !exportForm.batchId && !exportForm.employee && !exportForm.company) {
+          ElMessage.warning('请至少输入一个筛选条件(批次ID、员工、公司或时间范围)')
           return
         }
         
         exporting.value = true
         
         try {
-          // 处理不同类型的时间值 - 转换为上海时区的字符串
-          let startTime, endTime
+          let startTime = null
+          let endTime = null
           
-          if (typeof exportForm.timeRange[0] === 'string') {
-            // 假设已经是 'YYYY-MM-DD HH:mm:ss' 格式
-            startTime = moment.tz(exportForm.timeRange[0], 'YYYY-MM-DD HH:mm:ss', SHANGHAI_TZ).format('YYYY-MM-DD HH:mm:ss');
-          } else {
-            startTime = moment(exportForm.timeRange[0]).tz(SHANGHAI_TZ).format('YYYY-MM-DD HH:mm:ss')
+          // 如果设置了时间范围，则处理时间
+          if (exportForm.timeRange && exportForm.timeRange[0] && exportForm.timeRange[1]) {
+            // 处理不同类型的时间值 - 转换为上海时区的字符串
+            if (typeof exportForm.timeRange[0] === 'string') {
+              // 假设已经是 'YYYY-MM-DD HH:mm:ss' 格式
+              startTime = moment.tz(exportForm.timeRange[0], 'YYYY-MM-DD HH:mm:ss', SHANGHAI_TZ).format('YYYY-MM-DD HH:mm:ss');
+            } else {
+              startTime = moment(exportForm.timeRange[0]).tz(SHANGHAI_TZ).format('YYYY-MM-DD HH:mm:ss')
+            }
+            
+            if (typeof exportForm.timeRange[1] === 'string') {
+              endTime = moment.tz(exportForm.timeRange[1], 'YYYY-MM-DD HH:mm:ss', SHANGHAI_TZ).format('YYYY-MM-DD HH:mm:ss');
+            } else {
+              endTime = moment(exportForm.timeRange[1]).tz(SHANGHAI_TZ).format('YYYY-MM-DD HH:mm:ss')
+            }
+            
+            console.log('导出时间范围 (上海时区):', startTime, '至', endTime)
           }
           
-          if (typeof exportForm.timeRange[1] === 'string') {
-            endTime = moment.tz(exportForm.timeRange[1], 'YYYY-MM-DD HH:mm:ss', SHANGHAI_TZ).format('YYYY-MM-DD HH:mm:ss');
-          } else {
-            endTime = moment(exportForm.timeRange[1]).tz(SHANGHAI_TZ).format('YYYY-MM-DD HH:mm:ss')
+          // 构建额外筛选条件
+          const filters = {};
+          if (exportForm.batchId) {
+            filters.batch_id = exportForm.batchId.trim();
           }
-          
-          console.log('导出时间范围 (上海时区):', startTime, '至', endTime)
+          if (exportForm.employee) {
+            filters.employee = exportForm.employee.trim();
+          }
+          if (exportForm.company) {
+            filters.company = exportForm.company.trim();
+          }
           
           if (exportForm.processType === 'all') {
             // 导出所有流程数据
-            exportAllProcessData(startTime, endTime)
+            exportAllProcessData(startTime, endTime, filters)
           } else {
             // 导出单个流程数据
-            exportProcessData(exportForm.processType, startTime, endTime)
+            exportProcessData(exportForm.processType, startTime, endTime, filters)
           }
           
           ElMessage.success('导出任务已提交，文件将自动下载')
@@ -399,76 +505,32 @@
           // 创建Excel友好的数据
           let csvContent = "data:text/csv;charset=utf-8,";
           
-          // 获取表头 - 根据后端返回的数据字段调整
-          const headers = ["ID", "批次ID", "操作时间"];
-          
-          // 根据流程类型添加额外的表头 - 确保与后端返回的字段匹配
-          if (exportForm.processType === 'storage') {
-            headers.push("材料类型", "数量(kg)", "存储位置");
-          } else if (exportForm.processType === 'film') {
-            headers.push("覆膜类型", "机器ID", "处理时间(分钟)");
-          } else if (exportForm.processType === 'cutting') {
-            headers.push("宽度(mm)", "长度(m)", "机器ID");
-          } else if (exportForm.processType === 'inspection') {
-            headers.push("质量等级", "缺陷数量", "是否通过");
-          } else if (exportForm.processType === 'shipping') {
-            headers.push("目的地", "承运商", "跟踪号");
-          }
-          
-          headers.push("备注");
+          // 只保留共通字段
+          const headers = ["ID", "批次ID", "操作时间", "员工", "公司"];
           
           // 添加表头
           csvContent += headers.join(",") + "\r\n";
           
-          // 添加数据行 - 确保字段名与后端返回的字段匹配
+          // 添加数据，仅包含共通字段
           searchResults.value.forEach(item => {
-            let row = [
-              item.id,
-              item.batch_id,
-              item.timestamp
-            ];
-            
-            // 添加流程特定字段 - 确保与后端返回的字段名一致
-            if (exportForm.processType === 'storage') {
-              row.push(
-                item.material_type || "",
-                item.quantity || "",
-                item.storage_location || ""
-              );
-            } else if (exportForm.processType === 'film') {
-              row.push(
-                item.film_type || "",
-                item.machine_id || "",
-                item.duration || ""
-              );
-            } else if (exportForm.processType === 'cutting') {
-              row.push(
-                item.width || "",
-                item.length || "",
-                item.machine_id || ""
-              );
-            } else if (exportForm.processType === 'inspection') {
-              row.push(
-                item.quality_grade || "",
-                item.defect_count || "",
-                item.pass_status || ""
-              );
-            } else if (exportForm.processType === 'shipping') {
-              row.push(
-                item.destination || "",
-                item.carrier || "",
-                item.tracking_number || ""
-              );
-            }
-            
-            row.push(item.notes || "");
-            
-            // 处理CSV中的特殊字符
-            for (let i = 0; i < row.length; i++) {
-              if (typeof row[i] === 'string' && (row[i].includes(',') || row[i].includes('"') || row[i].includes('\n'))) {
-                row[i] = `"${row[i].replace(/"/g, '""')}"`;
+            // 转义CSV中的特殊字符
+            const sanitizeCSV = (value) => {
+              if (value === null || value === undefined) return "";
+              value = String(value);
+              // 如果值包含逗号、双引号或换行符，则用双引号包裹并将内部双引号替换为两个双引号
+              if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+                return `"${value.replace(/"/g, '""')}"`;
               }
-            }
+              return value;
+            };
+            
+            const row = [
+              sanitizeCSV(item.id),
+              sanitizeCSV(item.batch_id),
+              sanitizeCSV(item.timestamp),
+              sanitizeCSV(item.employee || ""),
+              sanitizeCSV(item.company || "")
+            ];
             
             csvContent += row.join(",") + "\r\n";
           });
@@ -477,19 +539,30 @@
           const encodedUri = encodeURI(csvContent);
           const link = document.createElement("a");
           link.setAttribute("href", encodedUri);
-          // 使用 moment 生成更简洁的文件名 (基于上海时区当前时间)
-          const formattedDate = moment().tz(SHANGHAI_TZ).format('YYYYMMDD_HHmmss');
-          link.setAttribute("download", `${exportForm.processType}_数据_${formattedDate}.csv`);
+          
+          // 构建文件名，包含筛选条件信息
+          let filename = exportForm.processType === 'all' ? 'all' : exportForm.processType;
+          
+          if (exportForm.batchId) filename += `_batch_${exportForm.batchId.trim()}`;
+          if (exportForm.employee) filename += `_emp_${exportForm.employee.trim()}`;
+          if (exportForm.company) filename += `_comp_${exportForm.company.trim()}`;
+          
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          filename += `_${timestamp}.csv`;
+          
+          link.setAttribute("download", filename);
           document.body.appendChild(link);
           
           // 触发下载
           link.click();
+          
+          // 清理DOM
           document.body.removeChild(link);
           
           ElMessage.success('数据导出成功');
         } catch (error) {
-          console.error('导出筛选数据失败:', error);
-          ElMessage.error('导出筛选数据失败');
+          console.error('导出数据失败:', error);
+          ElMessage.error('导出数据失败');
         }
       }
       

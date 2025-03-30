@@ -14,7 +14,8 @@
     }
     
     // 正确匹配ISO格式的日期字符串 (修复了前面的正则表达式)
-    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/.test(isoString)) {
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/.test(isoString) || 
+        /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(isoString)) {
       const date = new Date(isoString);
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -36,7 +37,7 @@
     } else if (obj !== null && typeof obj === 'object') {
       const result = {};
       for (const key in obj) {
-        if (key === 'timestamp' || key.endsWith('_at') || key.endsWith('_time')) {
+        if (key === 'timestamp' || key.endsWith('_at') || key.endsWith('_time') || key === 'startTime' || key === 'endTime') {
           result[key] = formatISODate(obj[key]);
         } else {
           result[key] = deepFormatDates(obj[key]);
@@ -70,6 +71,19 @@
       }
       
       return originalOn.call(this, event, callback);
+    };
+    
+    // 包装emit方法，确保发送的数据也进行日期格式化
+    const originalEmit = socket.emit;
+    socket.emit = function(event, ...args) {
+      const formattedArgs = args.map(arg => {
+        if (typeof arg === 'object' && arg !== null) {
+          return deepFormatDates(arg);
+        }
+        return arg;
+      });
+      
+      return originalEmit.apply(this, [event, ...formattedArgs]);
     };
     
     return socket;

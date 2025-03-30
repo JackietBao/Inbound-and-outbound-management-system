@@ -42,6 +42,8 @@
             <el-table-column prop="batchId" label="批次ID" width="150" />
             <el-table-column prop="processName" label="流程" width="100" />
             <el-table-column prop="timestamp" label="时间" width="180" />
+            <el-table-column prop="employee" label="员工" width="120" />
+            <el-table-column prop="company" label="公司" min-width="150" />
           </el-table>
         </div>
       </el-card>
