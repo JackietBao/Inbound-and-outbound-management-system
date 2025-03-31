@@ -70,6 +70,10 @@ export const exportProcessData = (processType, startTime, endTime, filters = {})
     params.append('company', filters.company);
   }
   
+  // 指定要导出的字段（确保包含员工和公司字段）
+  params.append('fields', 'batch_id,timestamp,employee,company');
+  params.append('format', 'excel');
+  
   // 构建最终URL
   const url = `${API_BASE_URL}/process/export?${params.toString()}`;
   
@@ -99,6 +103,10 @@ export const exportAllProcessData = (startTime, endTime, filters = {}) => {
   if (filters.company) {
     params.append('company', filters.company);
   }
+  
+  // 指定要导出的字段（确保包含员工和公司字段）
+  params.append('fields', 'batch_id,timestamp,employee,company');
+  params.append('format', 'excel');
   
   // 构建最终URL
   const url = `${API_BASE_URL}/process/export-all?${params.toString()}`;

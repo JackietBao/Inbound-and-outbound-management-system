@@ -71,9 +71,9 @@
           </el-button>
           <el-button 
             type="success" 
-            @click="handleExport" 
-            icon="el-icon-download"
+            @click="exportFilteredData" 
             :loading="exporting"
+            icon="el-icon-download"
           >
             导出Excel
           </el-button>
@@ -482,6 +482,71 @@
         currentPage.value = page
       }
       
+      // 导出筛选后的数据结果
+      const exportFilteredData = () => {
+        if (searchResults.value.length === 0) {
+          ElMessage.warning('没有可导出的数据')
+          return
+        }
+        
+        exporting.value = true;
+        
+        try {
+          // 生成Excel数据
+          const XLSX = window.XLSX; // 需要添加XLSX库引用
+          
+          // 准备数据 - 只包含需要的四个字段
+          const exportData = searchResults.value.map((item, index) => ({
+            '序号': index + 1,
+            '公司': item.company || '',
+            '批次': item.batch_id,
+            '时间': item.timestamp,
+            '员工': item.employee || ''
+          }));
+          
+          // 创建工作簿和工作表
+          const worksheet = XLSX.utils.json_to_sheet(exportData);
+          const workbook = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(workbook, worksheet, '数据');
+          
+          // 调整列宽
+          const columnWidths = [
+            { wch: 6 },   // 序号列宽
+            { wch: 15 },  // 批次列宽
+            { wch: 20 },  // 时间列宽
+            { wch: 10 },  // 员工列宽
+            { wch: 15 }   // 公司列宽
+          ];
+          worksheet['!cols'] = columnWidths;
+          
+          // 构建文件名
+          let filename = exportForm.processType === 'all' ? '所有流程' : 
+                         exportForm.processType === 'storage' ? '入库' : 
+                         exportForm.processType === 'film' ? '贴膜' : 
+                         exportForm.processType === 'cutting' ? '切割' : 
+                         exportForm.processType === 'inspection' ? '检验' : 
+                         exportForm.processType === 'shipping' ? '出货' : 
+                         exportForm.processType;
+          
+          if (exportForm.batchId) filename += `_批次${exportForm.batchId.trim()}`;
+          if (exportForm.employee) filename += `_员工${exportForm.employee.trim()}`;
+          if (exportForm.company) filename += `_公司${exportForm.company.trim()}`;
+          
+          const timestamp = new Date().toLocaleDateString().replace(/[/]/g, '-');
+          filename += `_${timestamp}.xlsx`;
+          
+          // 导出文件
+          XLSX.writeFile(workbook, filename);
+          
+          ElMessage.success('数据导出成功');
+        } catch (error) {
+          console.error('导出数据失败:', error);
+          ElMessage.error('导出数据失败，请确保已加载XLSX库');
+        } finally {
+          exporting.value = false;
+        }
+      }
+      
       return {
         processTypes,
         exportForm,
@@ -497,7 +562,8 @@
         handleSearch,
         handleExport,
         dateShortcuts,
-        disabledDate
+        disabledDate,
+        exportFilteredData
       }
     }
   }
