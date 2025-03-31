@@ -15,7 +15,6 @@
               :label="item.label"
               :value="item.value"
             />
-            <el-option key="all" label="所有流程" value="all" />
           </el-select>
         </el-form-item>
         
@@ -160,17 +159,6 @@
             @current-change="handleCurrentChange"
           />
         </div>
-        
-        <div class="export-actions">
-          <el-button 
-            type="success" 
-            @click="exportFilteredData" 
-            size="small" 
-            icon="el-icon-download"
-          >
-            导出筛选结果
-          </el-button>
-        </div>
       </div>
       
       <el-empty 
@@ -184,7 +172,7 @@
   import { ref, reactive, computed } from 'vue'
   import { ElMessage } from 'element-plus'
   import moment from 'moment-timezone'
-  import { getProcessData, exportProcessData, exportAllProcessData } from '../utils/api'
+  import { getProcessData, exportProcessData } from '../utils/api'
   import { PROCESS_TYPES } from '../utils/constants'
   import { processData } from '../utils/socket'
   
@@ -300,11 +288,6 @@
           return
         }
         
-        if (exportForm.processType === 'all' && !exportForm.batchId) {
-          ElMessage.warning('选择"所有流程"时，请至少输入批次ID进行筛选')
-          return
-        }
-        
         let startTime = null
         let endTime = null
         
@@ -407,7 +390,7 @@
                   exportForm.processType === 'film' ? '贴膜' : 
                   exportForm.processType === 'cutting' ? '切割' : 
                   exportForm.processType === 'inspection' ? '检验' : 
-                  exportForm.processType === 'shipping' ? '出货' : '所有';
+                  exportForm.processType === 'shipping' ? '出货' : '未知';
                   
                 noResultsMsg += `（在"${processTypeText}流程"中）`;
                 
@@ -477,13 +460,8 @@
             filters.company = exportForm.company.trim();
           }
           
-          if (exportForm.processType === 'all') {
-            // 导出所有流程数据
-            exportAllProcessData(startTime, endTime, filters)
-          } else {
-            // 导出单个流程数据
-            exportProcessData(exportForm.processType, startTime, endTime, filters)
-          }
+          // 导出单个流程数据
+          exportProcessData(exportForm.processType, startTime, endTime, filters)
           
           ElMessage.success('导出任务已提交，文件将自动下载')
         } catch (error) {
@@ -491,78 +469,6 @@
           ElMessage.error('导出数据失败')
         } finally {
           exporting.value = false
-        }
-      }
-      
-      // 导出筛选后的数据结果
-      const exportFilteredData = () => {
-        if (searchResults.value.length === 0) {
-          ElMessage.warning('没有可导出的数据')
-          return
-        }
-        
-        try {
-          // 创建Excel友好的数据
-          let csvContent = "data:text/csv;charset=utf-8,";
-          
-          // 只保留共通字段
-          const headers = ["ID", "批次ID", "操作时间", "员工", "公司"];
-          
-          // 添加表头
-          csvContent += headers.join(",") + "\r\n";
-          
-          // 添加数据，仅包含共通字段
-          searchResults.value.forEach(item => {
-            // 转义CSV中的特殊字符
-            const sanitizeCSV = (value) => {
-              if (value === null || value === undefined) return "";
-              value = String(value);
-              // 如果值包含逗号、双引号或换行符，则用双引号包裹并将内部双引号替换为两个双引号
-              if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-                return `"${value.replace(/"/g, '""')}"`;
-              }
-              return value;
-            };
-            
-            const row = [
-              sanitizeCSV(item.id),
-              sanitizeCSV(item.batch_id),
-              sanitizeCSV(item.timestamp),
-              sanitizeCSV(item.employee || ""),
-              sanitizeCSV(item.company || "")
-            ];
-            
-            csvContent += row.join(",") + "\r\n";
-          });
-          
-          // 创建下载链接
-          const encodedUri = encodeURI(csvContent);
-          const link = document.createElement("a");
-          link.setAttribute("href", encodedUri);
-          
-          // 构建文件名，包含筛选条件信息
-          let filename = exportForm.processType === 'all' ? 'all' : exportForm.processType;
-          
-          if (exportForm.batchId) filename += `_batch_${exportForm.batchId.trim()}`;
-          if (exportForm.employee) filename += `_emp_${exportForm.employee.trim()}`;
-          if (exportForm.company) filename += `_comp_${exportForm.company.trim()}`;
-          
-          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-          filename += `_${timestamp}.csv`;
-          
-          link.setAttribute("download", filename);
-          document.body.appendChild(link);
-          
-          // 触发下载
-          link.click();
-          
-          // 清理DOM
-          document.body.removeChild(link);
-          
-          ElMessage.success('数据导出成功');
-        } catch (error) {
-          console.error('导出数据失败:', error);
-          ElMessage.error('导出数据失败');
         }
       }
       
@@ -590,7 +496,6 @@
         handleCurrentChange,
         handleSearch,
         handleExport,
-        exportFilteredData,
         dateShortcuts,
         disabledDate
       }
