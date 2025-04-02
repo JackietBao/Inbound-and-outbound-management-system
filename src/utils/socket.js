@@ -101,7 +101,7 @@ export const setupSocketListeners = () => {
       // 确保时间格式正确
       const formattedRecords = deepFormatDates(records);
       processData[processType].value = formattedRecords;
-      lastUpdateTime.value = new Date().toLocaleString('zh-CN');
+      lastUpdateTime.value = '北京时间：' + new Date().toLocaleString('zh-CN');
     }
   });
 
@@ -109,13 +109,13 @@ export const setupSocketListeners = () => {
   socket.on('recent_batches', (data) => {
     // 确保时间格式正确
     recentBatches.value = deepFormatDates(data);
-    lastUpdateTime.value = new Date().toLocaleString('zh-CN');
+    lastUpdateTime.value = '北京时间：' + new Date().toLocaleString('zh-CN');
   });
 
   // 今日统计数据更新
   socket.on('process_counts', (data) => {
     processCounts.value = data;
-    lastUpdateTime.value = new Date().toLocaleString('zh-CN');
+    lastUpdateTime.value = '北京时间：' + new Date().toLocaleString('zh-CN');
   });
 };
 

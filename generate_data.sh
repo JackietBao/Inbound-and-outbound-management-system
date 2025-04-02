@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 定义服务器地址
-SERVER_URL="http://192.168.1.16:3000/api/process"
+SERVER_URL="http://localhost:3000/api/process"
 
 # 定义流程顺序
 declare -a PROCESS_TYPES=("storage" "film" "cutting" "inspection" "shipping")

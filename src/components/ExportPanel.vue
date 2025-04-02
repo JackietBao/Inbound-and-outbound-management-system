@@ -6,78 +6,93 @@
         </div>
       </template>
       
-      <el-form :model="exportForm" label-width="100px" inline>
-        <el-form-item label="流程类型">
-          <el-select v-model="exportForm.processType" placeholder="选择流程类型">
-            <el-option
-              v-for="item in processTypes"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
-        </el-form-item>
+      <el-form :model="exportForm" label-width="80px" class="filter-form" size="default">
+        <el-row :gutter="20">
+          <el-col :xs="24" :sm="12" :md="8" :lg="6">
+            <el-form-item label="流程类型">
+              <el-select v-model="exportForm.processType" placeholder="选择流程类型" style="width: 100%">
+                <el-option
+                  v-for="item in processTypes"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          
+          <el-col :xs="24" :sm="12" :md="8" :lg="6">
+            <el-form-item label="批次ID">
+              <el-input
+                v-model="exportForm.batchId"
+                placeholder="输入批次ID"
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+          
+          <el-col :xs="24" :sm="12" :md="8" :lg="6">
+            <el-form-item label="员工">
+              <el-input
+                v-model="exportForm.employee"
+                placeholder="输入员工姓名"
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+          
+          <el-col :xs="24" :sm="12" :md="8" :lg="6">
+            <el-form-item label="公司">
+              <el-input
+                v-model="exportForm.company"
+                placeholder="输入公司名称"
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
         
-        <el-form-item label="批次ID">
-          <el-input
-            v-model="exportForm.batchId"
-            placeholder="输入批次ID"
-            clearable
-          />
-        </el-form-item>
-        
-        <el-form-item label="员工">
-          <el-input
-            v-model="exportForm.employee"
-            placeholder="输入员工姓名"
-            clearable
-          />
-        </el-form-item>
-        
-        <el-form-item label="公司">
-          <el-input
-            v-model="exportForm.company"
-            placeholder="输入公司名称"
-            clearable
-          />
-        </el-form-item>
-        
-        <el-form-item label="时间范围">
-          <el-date-picker
-            v-model="exportForm.timeRange"
-            type="datetimerange"
-            range-separator="至"
-            start-placeholder="开始时间"
-            end-placeholder="结束时间"
-            value-format="YYYY-MM-DD HH:mm:ss"
-            format="YYYY-MM-DD HH:mm:ss"
-            :default-time="['00:00:00', '23:59:59']"
-            :shortcuts="dateShortcuts"
-            :disabledDate="disabledDate"
-            :editable="true"
-            :clearable="true"
-            time-arrow-control
-          />
-        </el-form-item>
-        
-        <el-form-item>
-          <el-button 
-            type="primary" 
-            @click="handleSearch" 
-            :loading="loading"
-            icon="el-icon-search"
-          >
-            查询
-          </el-button>
-          <el-button 
-            type="success" 
-            @click="exportFilteredData" 
-            :loading="exporting"
-            icon="el-icon-download"
-          >
-            导出Excel
-          </el-button>
-        </el-form-item>
+        <el-row :gutter="20">
+          <el-col :xs="24" :sm="24" :md="16">
+            <el-form-item label="时间范围">
+              <el-date-picker
+                v-model="exportForm.timeRange"
+                type="datetimerange"
+                range-separator="至"
+                start-placeholder="开始时间"
+                end-placeholder="结束时间"
+                value-format="YYYY-MM-DD HH:mm:ss"
+                format="YYYY-MM-DD HH:mm:ss"
+                :default-time="['00:00:00', '23:59:59']"
+                :shortcuts="dateShortcuts"
+                :disabledDate="disabledDate"
+                :editable="true"
+                :clearable="true"
+                time-arrow-control
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+          
+          <el-col :xs="24" :sm="24" :md="8">
+            <div class="button-container">
+              <el-button 
+                type="primary" 
+                @click="handleSearch" 
+                :loading="loading"
+              >
+                查询
+              </el-button>
+              <el-button 
+                type="success" 
+                @click="exportFilteredData" 
+                :loading="exporting"
+              >
+                导出Excel
+              </el-button>
+            </div>
+          </el-col>
+        </el-row>
       </el-form>
       
       <div v-if="searchError" class="error-message">
@@ -106,36 +121,37 @@
           style="width: 100%" 
           max-height="400"
           :default-sort="{prop: 'id', order: 'ascending'}"
+          class="result-table"
         >
           <!-- 基础共通字段 -->
           <el-table-column 
             prop="id" 
             label="ID" 
-            width="80" 
+            width="70" 
             sortable
           />
           <el-table-column 
             prop="batch_id" 
             label="批次ID" 
-            width="150" 
+            width="120" 
             sortable
           />
           <el-table-column 
             prop="timestamp" 
             label="操作时间" 
-            width="180" 
+            width="170" 
             sortable
           />
           <el-table-column 
             prop="employee" 
             label="员工" 
-            width="120" 
+            width="100" 
             sortable
           />
           <el-table-column 
             prop="company" 
             label="公司" 
-            min-width="150" 
+            min-width="120" 
             sortable
           />
           
@@ -580,76 +596,100 @@
     align-items: center;
   }
   
+  .card-header h2 {
+    margin: 0;
+    font-size: 18px;
+  }
+  
+  .filter-form {
+    margin-bottom: 10px;
+  }
+  
+  .filter-form :deep(.el-form-item) {
+    margin-bottom: 18px;
+  }
+  
+  .button-container {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 4px;
+    height: 32px;
+  }
+  
+  @media (min-width: 768px) {
+    .button-container {
+      justify-content: flex-end;
+    }
+  }
+  
+  .button-container .el-button {
+    padding: 8px 15px;
+    font-size: 14px;
+    margin-right: 10px;
+  }
+  
+  .error-message {
+    margin-bottom: 15px;
+  }
+  
   .search-results {
     margin-top: 20px;
   }
   
-  .search-results h3 {
-    margin-bottom: 15px;
-  }
-  
-  .export-actions {
-    margin-top: 15px;
-    text-align: right;
-  }
-  
-  .time-tip {
-    margin-top: 10px;
-    font-size: 0.8em;
-    color: #909399;
-  }
-  
   .time-range-info {
-    margin-bottom: 10px;
-    font-size: 0.8em;
     color: #909399;
-  }
-  
-  .error-message {
-    color: #f56c6c;
-    margin: 10px 0;
     font-size: 14px;
-  }
-  
-  .loading-overlay {
-    position: relative;
-    min-height: 100px;
-    margin: 20px 0;
+    margin-bottom: 10px;
   }
   
   .pagination-container {
-    margin: 15px 0;
+    margin-top: 20px;
     text-align: right;
   }
   
   /* 表格样式优化 */
-  :deep(.el-table .cell) {
-    word-break: break-word;
+  .result-table {
+    margin-bottom: 15px;
+    width: 100%;
+    overflow-x: auto;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+  }
+  
+  :deep(.el-table th) {
+    background-color: #f5f7fa;
+    color: #606266;
+    font-weight: bold;
+    padding: 8px 0;
+  }
+  
+  :deep(.el-table td) {
+    padding: 8px 0;
   }
   
   :deep(.el-table--striped .el-table__body tr.el-table__row--striped td) {
     background-color: #fafafa;
   }
   
-  :deep(.el-table__row:hover > td) {
-    background-color: #f0f9ff !important;
+  :deep(.el-card__header) {
+    padding: 12px 20px;
+    border-bottom: 1px solid #ebeef5;
+    background-color: #f5f7fa;
   }
   
-  /* 表单样式优化 */
-  :deep(.el-form--inline .el-form-item) {
-    margin-right: 15px;
-    margin-bottom: 15px;
+  /* 表单元素优化 */
+  :deep(.el-input__inner),
+  :deep(.el-select .el-input__inner),
+  :deep(.el-date-editor--datetimerange) {
+    height: 32px;
+    line-height: 32px;
   }
   
-  /* 响应式优化 */
-  @media screen and (max-width: 768px) {
-    :deep(.el-form--inline) {
-      display: flex;
-      flex-direction: column;
-    }
-    
-    :deep(.el-form--inline .el-form-item) {
-      margin-right: 0;
-    }
+  :deep(.el-date-editor--datetimerange) {
+    width: 100% !important;
+  }
+  
+  :deep(.el-date-editor .el-range-separator) {
+    line-height: 24px;
   }
   </style> 

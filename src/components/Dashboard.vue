@@ -1,14 +1,7 @@
 <template>
     <div class="dashboard-container">
       <el-card shadow="hover">
-        <template #header>
-          <div class="card-header">
-            <h2>实时生产状态</h2>
-            <el-tag>最后更新: {{ lastUpdateTime }}</el-tag>
-          </div>
-        </template>
-        
-        <div class="dashboard-stats">
+        <div class="dashboard-stats" v-if="!showCompletionRates">
           <el-row :gutter="20">
             <el-col :span="4" v-for="process in processTypes" :key="process.value">
               <el-card 
@@ -36,31 +29,42 @@
           </el-row>
         </div>
         
-        <!-- 新增公司批次完成率模块 -->
-        <div class="company-completion-rates">
-          <h3>公司批次完成率</h3>
+        <!-- 公司批次完成率模块 -->
+        <div class="company-completion-rates" v-if="showCompletionRates">
           <div class="completion-rates-container">
             <el-skeleton :rows="3" animated v-if="Object.keys(companyCompletionRates).length === 0" />
-            <div v-else v-for="(rate, company) in companyCompletionRates" :key="company" class="company-rate-item">
-              <div class="company-name">{{ company }}</div>
-              <div class="progress-container">
-                <el-progress 
-                  :percentage="rate.percentage" 
-                  :status="rate.percentage === 100 ? 'success' : ''" 
-                  :stroke-width="16"
-                  :color="getProgressColor(rate.percentage)"
-                >
-                  <template #default>
-                    <span>已完成: {{ rate.percentage }}%</span>
-                    <span class="progress-detail">(完成 {{ rate.completed }}/总计 {{ rate.total }})</span>
-                  </template>
-                </el-progress>
-              </div>
-            </div>
+            
+            <el-row :gutter="20" v-else>
+              <el-col :xs="24" :sm="12" :md="8" :lg="8" :xl="8" v-for="(rate, company) in companyCompletionRates" :key="company" class="company-col">
+                <div class="company-card">
+                  <div class="company-name">{{ company }}</div>
+                  <div class="progress-bar">
+                    <div 
+                      class="progress-bar-completed" 
+                      :style="{ width: `${rate.percentage}%`, backgroundColor: getProgressColor(rate.percentage) }"
+                    >
+                      <span class="progress-text" v-if="rate.percentage >= 10">已出货{{ rate.percentage }}%</span>
+                    </div>
+                    <div 
+                      class="progress-bar-uncompleted"
+                      :style="{ width: `${100 - rate.percentage}%` }"
+                      v-if="rate.percentage < 100"
+                    >
+                      <span class="progress-text-uncompleted" v-if="100 - rate.percentage >= 10">未出货{{ 100 - rate.percentage }}%</span>
+                    </div>
+                  </div>
+                  <div class="progress-details">
+                    <span class="complete-label">已完成</span>
+                    <span class="batch-count">{{ rate.completed }}/{{ rate.total }}</span>
+                    <span class="complete-status" v-if="rate.percentage === 100">(已全部完成)</span>
+                  </div>
+                </div>
+              </el-col>
+            </el-row>
           </div>
         </div>
         
-        <div class="recent-updates">
+        <div class="recent-updates" v-if="!showCompletionRates">
           <h3>最近更新的批次</h3>
           <el-table 
             :data="formattedRecentBatches" 
@@ -87,6 +91,12 @@
   
   export default {
     name: 'Dashboard',
+    props: {
+      showCompletionRates: {
+        type: Boolean,
+        default: false
+      }
+    },
     setup() {
       const processTypes = PROCESS_TYPES
       const processColors = PROCESS_COLORS
@@ -209,13 +219,7 @@
   
   <style scoped>
   .dashboard-container {
-    margin-bottom: 20px;
-  }
-  
-  .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    margin-bottom: 10px;
   }
   
   .dashboard-stats {
@@ -227,8 +231,10 @@
   }
   
   .stat-card h3 {
-    margin: 0 0 10px 0;
-    font-size: 16px;
+    font-size: 14px;
+    color: #606266;
+    margin-top: 0;
+    margin-bottom: 10px;
   }
   
   .count {
@@ -238,74 +244,105 @@
   }
   
   .today-label {
-    font-size: 12px;
     color: #909399;
+    font-size: 12px;
     margin-top: 5px;
   }
   
-  /* 公司完成率样式 */
-  .company-completion-rates {
-    margin-bottom: 20px;
+  .recent-updates {
+    margin-top: 20px;
   }
   
-  .company-completion-rates h3 {
-    margin-bottom: 15px;
-    font-weight: bold;
-    color: #303133;
+  .company-completion-rates {
+    width: 100%;
   }
   
   .completion-rates-container {
-    background-color: #f9f9f9;
-    border-radius: 4px;
-    padding: 15px;
+    margin-top: 15px;
   }
   
-  .company-rate-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 15px;
+  .company-col {
+    margin-bottom: 20px;
+  }
+  
+  .company-card {
+    background-color: #f5f7fa;
+    padding: 15px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   }
   
   .company-name {
-    width: 180px;
     font-weight: bold;
+    margin-bottom: 10px;
+    color: #303133;
+  }
+  
+  .progress-bar {
+    display: flex;
+    height: 20px;
+    border-radius: 10px;
     overflow: hidden;
-    text-overflow: ellipsis;
+    margin-bottom: 8px;
+    background-color: #e9ecef;
+  }
+  
+  .progress-bar-completed {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    border-radius: 10px 0 0 10px;
+    transition: width 0.3s ease;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+  }
+  
+  .progress-bar-uncompleted {
+    height: 100%;
+    background-color: #e9ecef;
+    border-radius: 0 10px 10px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .progress-text {
+    padding: 0 5px;
     white-space: nowrap;
-    padding-right: 15px;
   }
   
-  .progress-container {
-    flex: 1;
+  .progress-text-uncompleted {
+    padding: 0 5px;
+    white-space: nowrap;
+    color: #606266;
+    font-size: 12px;
+    font-weight: bold;
   }
   
-  .progress-detail {
-    margin-left: 8px;
-    font-size: 0.85em;
+  .progress-details {
+    display: flex;
+    align-items: center;
+    font-size: 12px;
     color: #606266;
   }
   
-  .recent-updates h3 {
-    margin-bottom: 15px;
+  .complete-label {
+    margin-right: 5px;
+  }
+  
+  .batch-count {
     font-weight: bold;
-    color: #303133;
   }
   
-  :deep(.el-table) {
-    --el-table-header-bg-color: #f5f7fa;
-    --el-table-row-hover-bg-color: #ecf5ff;
-    --el-table-fixed-left-column: 1px solid #dcdfe6;
-    --el-table-fixed-right-column: 1px solid #dcdfe6;
-    font-size: 14px;
-    border-radius: 4px;
-  }
-  
-  :deep(.el-table th) {
+  .complete-status {
+    margin-left: 8px;
+    color: #67c23a;
     font-weight: bold;
-    color: #303133;
   }
   
-  :deep(.el-table__row) {
-    transition: background-color 0.2s;
+  .dashboard-container :deep(.el-card__body) {
+    padding: 10px;
   }
   </style>
