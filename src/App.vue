@@ -26,13 +26,39 @@
             @select="handleMenuSelect"
           >
             <el-menu-item index="1">
-              <el-icon><i-ep-pie-chart /></el-icon>
+              <el-icon><i-ep-odometer /></el-icon>
               <template #title>仪表盘</template>
             </el-menu-item>
-            <el-menu-item index="2">
-              <el-icon><i-ep-odometer /></el-icon>
-              <template #title>流程追踪</template>
-            </el-menu-item>
+            <el-sub-menu index="2">
+              <template #title>
+                <el-icon><i-ep-pie-chart /></el-icon>
+                <span>流程追踪</span>
+              </template>
+              <el-menu-item index="2-1">
+                <el-icon><i-ep-menu /></el-icon>
+                总览
+              </el-menu-item>
+              <el-menu-item index="2-2">
+                <el-icon><i-ep-box /></el-icon>
+                入库
+              </el-menu-item>
+              <el-menu-item index="2-3">
+                <el-icon><i-ep-film /></el-icon>
+                贴膜
+              </el-menu-item>
+              <el-menu-item index="2-4">
+                <el-icon><i-ep-scissors /></el-icon>
+                切割
+              </el-menu-item>
+              <el-menu-item index="2-5">
+                <el-icon><i-ep-check /></el-icon>
+                检验
+              </el-menu-item>
+              <el-menu-item index="2-6">
+                <el-icon><i-ep-truck /></el-icon>
+                出货
+              </el-menu-item>
+            </el-sub-menu>
             <el-menu-item index="3">
               <el-icon><i-ep-filter /></el-icon>
               <template #title>数据筛选与导出</template>
@@ -65,8 +91,42 @@
           </el-header>
           
           <el-main>
-            <!-- 公司批次完成率 -->
-            <dashboard v-if="activeView === '1' || activeView === '2'" :show-completion-rates="activeView === '1'" />
+            <!-- 仪表盘（原公司批次完成率） -->
+            <dashboard v-if="activeView === '1'" :show-completion-rates="true" />
+            
+            <!-- 流程追踪-总览 -->
+            <dashboard v-if="activeView === '2-1'" :show-completion-rates="false" />
+            
+            <!-- 各流程数据 -->
+            <process-table 
+              v-if="activeView === '2-2'" 
+              processType="storage" 
+              processName="入库" 
+            />
+            
+            <process-table 
+              v-if="activeView === '2-3'" 
+              processType="film" 
+              processName="贴膜" 
+            />
+            
+            <process-table 
+              v-if="activeView === '2-4'" 
+              processType="cutting" 
+              processName="切割" 
+            />
+            
+            <process-table 
+              v-if="activeView === '2-5'" 
+              processType="inspection" 
+              processName="检验" 
+            />
+            
+            <process-table 
+              v-if="activeView === '2-6'" 
+              processType="shipping" 
+              processName="出货" 
+            />
             
             <!-- 数据筛选与导出面板 -->
             <export-panel v-if="activeView === '3'" class="fullscreen-panel" />
@@ -87,6 +147,7 @@ import { ElConfigProvider } from 'element-plus'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import Dashboard from './components/Dashboard.vue'
 import ExportPanel from './components/ExportPanel.vue'
+import ProcessTable from './components/ProcessTable.vue'
 import { PROCESS_TYPES } from './utils/constants'
 import socketService, { connectionStatus, lastUpdateTime, setupSocketListeners, connectSocket, disconnectSocket, requestInitialData } from './utils/socket'
 
@@ -95,7 +156,8 @@ export default {
   components: {
     ElConfigProvider,
     Dashboard,
-    ExportPanel
+    ExportPanel,
+    ProcessTable
   },
   setup() {
     const processTypes = PROCESS_TYPES
