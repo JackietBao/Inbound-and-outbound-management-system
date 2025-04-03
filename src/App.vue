@@ -9,10 +9,6 @@
               <span v-show="!isCollapse" class="logo-text">生产流程追踪系统</span>
             </div>
             <el-button type="text" @click="toggleSidebar" class="toggle-btn">
-              <el-icon :size="24">
-                <i-ep-fold v-if="!isCollapse" />
-                <i-ep-expand v-else />
-              </el-icon>
             </el-button>
           </div>
           <el-menu
@@ -26,41 +22,41 @@
             @select="handleMenuSelect"
           >
             <el-menu-item index="1">
-              <el-icon><i-ep-odometer /></el-icon>
+              <el-icon><Odometer /></el-icon>
               <template #title>仪表盘</template>
             </el-menu-item>
             <el-sub-menu index="2">
               <template #title>
-                <el-icon><i-ep-pie-chart /></el-icon>
+                <el-icon><DataAnalysis /></el-icon>
                 <span>流程追踪</span>
               </template>
               <el-menu-item index="2-1">
-                <el-icon><i-ep-menu /></el-icon>
+                <el-icon><Menu /></el-icon>
                 总览
               </el-menu-item>
               <el-menu-item index="2-2">
-                <el-icon><i-ep-box /></el-icon>
+                <el-icon><Box /></el-icon>
                 入库
               </el-menu-item>
               <el-menu-item index="2-3">
-                <el-icon><i-ep-film /></el-icon>
+                <el-icon><Picture /></el-icon>
                 贴膜
               </el-menu-item>
               <el-menu-item index="2-4">
-                <el-icon><i-ep-scissors /></el-icon>
+                <el-icon><Scissor /></el-icon>
                 切割
               </el-menu-item>
               <el-menu-item index="2-5">
-                <el-icon><i-ep-check /></el-icon>
+                <el-icon><Check /></el-icon>
                 检验
               </el-menu-item>
               <el-menu-item index="2-6">
-                <el-icon><i-ep-truck /></el-icon>
+                <el-icon><Van /></el-icon>
                 出货
               </el-menu-item>
             </el-sub-menu>
             <el-menu-item index="3">
-              <el-icon><i-ep-filter /></el-icon>
+              <el-icon><Filter /></el-icon>
               <template #title>数据筛选与导出</template>
             </el-menu-item>
           </el-menu>
@@ -78,8 +74,8 @@
                 :title="isCollapse ? '展开导航栏' : '收起导航栏'"
               >
                 <el-icon>
-                  <i-ep-expand v-if="isCollapse" />
-                  <i-ep-fold v-else />
+                  <Expand v-if="isCollapse" />
+                  <Fold v-else />
                 </el-icon>
               </el-button>
               <div class="header-title">
@@ -151,13 +147,40 @@ import ProcessTable from './components/ProcessTable.vue'
 import { PROCESS_TYPES } from './utils/constants'
 import socketService, { connectionStatus, lastUpdateTime, setupSocketListeners, connectSocket, disconnectSocket, requestInitialData } from './utils/socket'
 
+// 导入Element Plus图标
+import { 
+  Fold, 
+  Expand, 
+  Odometer, 
+  DataAnalysis, 
+  Menu, 
+  Box, 
+  Picture, 
+  Scissor,
+  Check,
+  Van, 
+  Filter 
+} from '@element-plus/icons-vue'
+
 export default {
   name: 'App',
   components: {
     ElConfigProvider,
     Dashboard,
     ExportPanel,
-    ProcessTable
+    ProcessTable,
+    // 注册图标组件
+    Fold, 
+    Expand, 
+    Odometer, 
+    DataAnalysis, 
+    Menu, 
+    Box, 
+    Picture,
+    Scissor,
+    Check,
+    Van, 
+    Filter
   },
   setup() {
     const processTypes = PROCESS_TYPES

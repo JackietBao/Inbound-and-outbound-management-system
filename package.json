@@ -21,7 +21,10 @@
     "vue": "^3.4.21"
   },
   "devDependencies": {
+    "@iconify/json": "^2.2.323",
     "@vitejs/plugin-vue": "^5.2.3",
+    "unplugin-icons": "^22.1.0",
+    "unplugin-vue-components": "^28.4.1",
     "vite": "^5.4.15"
   }
 }
