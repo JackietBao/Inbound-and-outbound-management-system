@@ -308,9 +308,17 @@
           };
         });
         
-        // 按完成率排序
+        // 更新排序逻辑：未完成100%的公司优先，已完成100%的排在后面
+        // 在各分组内部，按照完成率从高到低排序
         companyCompletionRates.value = Object.fromEntries(
-          Object.entries(rates).sort((a, b) => b[1].percentage - a[1].percentage)
+          Object.entries(rates).sort((a, b) => {
+            // 如果一个是100%完成而另一个不是，优先展示未完成的
+            if (a[1].percentage === 100 && b[1].percentage < 100) return 1;
+            if (a[1].percentage < 100 && b[1].percentage === 100) return -1;
+            
+            // 在相同分组内(都是100%或都不是100%)，按照完成率从高到低排序
+            return b[1].percentage - a[1].percentage;
+          })
         );
       };
       
