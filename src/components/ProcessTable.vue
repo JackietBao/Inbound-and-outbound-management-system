@@ -15,9 +15,29 @@
         highlight-current-row
         :header-cell-style="{ background: processColor, color: 'white' }"
       >
-        <el-table-column prop="batch_id" label="批次ID" width="150" />
         <el-table-column prop="company" label="公司" min-width="150" />
-        <el-table-column prop="timestamp" label="操作时间" width="180" sortable="custom" />
+        <el-table-column prop="batch_id" label="批次ID" min-width="120" />
+        <el-table-column label="流程" min-width="80" align="center">
+          <template #default="scope">
+            <div 
+              class="process-tag"
+              :style="{
+                backgroundColor: processColor,
+                color: 'white',
+                fontWeight: 'bold',
+                border: 'none',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                display: 'inline-block',
+                textAlign: 'center',
+                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+              }"
+            >
+              {{ processName }}
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="timestamp" label="操作时间" width="180" />
         <el-table-column prop="employee" label="员工" width="120" />
       </el-table>
       
@@ -192,5 +212,14 @@
   
   :deep(.el-table__row) {
     transition: all 0.3s;
+  }
+  
+  .process-tag {
+    transition: all 0.3s ease;
+  }
+  
+  .process-tag:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
   }
   </style>

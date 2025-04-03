@@ -12,7 +12,7 @@
                 <div class="stat-card">
                   <h3>{{ process.label }}</h3>
                   <div class="count">{{ processCounts[process.value] || 0 }}</div>
-                  <div class="today-label">今日完成数量</div>
+                  <div class="today-label">完成数量</div>
                 </div>
               </el-card>
             </el-col>
@@ -22,7 +22,7 @@
                 <div class="stat-card">
                   <h3>全流程完成</h3>
                   <div class="count">{{ completedCount }}</div>
-                  <div class="today-label">今日完成批次</div>
+                  <div class="today-label">完成批次</div>
                 </div>
               </el-card>
             </el-col>
@@ -69,14 +69,33 @@
           <el-table 
             :data="formattedRecentBatches" 
             style="width: 100%" 
-            height="300"
+            height="450"
             border
             stripe
-            highlight-current-row>
+            highlight-current-row
+            :header-cell-style="{ backgroundColor: '#f5f7fa', color: '#606266' }"
+          >
             <el-table-column prop="company" label="公司" min-width="150" />
             <el-table-column prop="batchId" label="批次ID" min-width="120" />
-            <el-table-column prop="processName" label="流程" min-width="80" align="center" />
-            <el-table-column prop="timestamp" label="时间" min-width="150" sortable />
+            <el-table-column label="流程" min-width="80" align="center">
+              <template #default="scope">
+                <!-- 添加调试代码，打印实际接收到的数据 -->
+                <div v-if="false">{{ JSON.stringify(scope.row) }}</div>
+                
+                <div 
+                  class="process-tag"
+                  :style="{
+                    backgroundColor: processColors[getProcessKey(scope.row)],
+                    color: 'white',
+                    fontWeight: 'bold',
+                    border: 'none'
+                  }"
+                >
+                  {{ getProcessLabel(scope.row.processName || scope.row.process_type) }}
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column prop="timestamp" label="时间" min-width="150" />
             <el-table-column prop="employee" label="员工" min-width="100" />
           </el-table>
         </div>
@@ -105,8 +124,58 @@
       // 计算全流程完成数量
       const completedCount = computed(() => processCounts.value.shipping || 0)
       
+      // 获取流程显示名称
+      const getProcessLabel = (processType) => {
+        // 如果已经是中文名称，直接返回
+        const chineseProcessNames = ['入库', '贴膜', '切割', '检验', '出货'];
+        if (chineseProcessNames.includes(processType)) {
+          return processType;
+        }
+        
+        // 否则尝试查找对应的标签
+        const process = processTypes.find(p => p.value === processType);
+        return process ? process.label : processType;
+      }
+      
+      // 获取流程背景颜色
+      const getProcessBgColor = (processType) => {
+        switch(processType) {
+          case 'storage': return '#e3f2fd'; // 更鲜明的浅蓝色背景
+          case 'film': return '#e8f5e9';    // 更鲜明的浅绿色背景
+          case 'cutting': return '#fff3e0';  // 更鲜明的浅橙色背景
+          case 'inspection': return '#ffebee'; // 更鲜明的浅红色背景
+          case 'shipping': return '#f5f5f5';  // 浅灰色背景
+          default: return '#f0f2f5';
+        }
+      }
+      
+      // 获取流程文字颜色
+      const getProcessTextColor = (processType) => {
+        switch(processType) {
+          case 'storage': return '#0d47a1'; // 深蓝色文字
+          case 'film': return '#1b5e20';    // 深绿色文字
+          case 'cutting': return '#e65100';  // 深橙色文字
+          case 'inspection': return '#b71c1c'; // 深红色文字
+          case 'shipping': return '#263238';  // 深灰色文字
+          default: return '#303133';
+        }
+      }
+      
+      // 获取流程边框颜色
+      const getProcessBorderColor = (processType) => {
+        switch(processType) {
+          case 'storage': return '#2196f3'; // 蓝色边框
+          case 'film': return '#4caf50';    // 绿色边框
+          case 'cutting': return '#ff9800';  // 橙色边框
+          case 'inspection': return '#f44336'; // 红色边框
+          case 'shipping': return '#9e9e9e';  // 灰色边框
+          default: return '#dcdfe6';
+        }
+      }
+      
       // 格式化最近批次的时间
       const formattedRecentBatches = computed(() => {
+        console.log('原始数据:', JSON.stringify(recentBatches.value));
         return recentBatches.value.map(batch => {
           // 检查时间格式是否需要转换
           let timestamp = batch.timestamp;
@@ -114,19 +183,83 @@
             // 转换ISO格式为标准格式
             const date = new Date(timestamp);
             timestamp = date.getFullYear() + '-' +
-                       String(date.getMonth() + 1).padStart(2, '0') + '-' +
-                       String(date.getDate()).padStart(2, '0') + ' ' +
-                       String(date.getHours()).padStart(2, '0') + ':' +
-                       String(date.getMinutes()).padStart(2, '0') + ':' +
-                       String(date.getSeconds()).padStart(2, '0');
+                     String(date.getMonth() + 1).padStart(2, '0') + '-' +
+                     String(date.getDate()).padStart(2, '0') + ' ' +
+                     String(date.getHours()).padStart(2, '0') + ':' +
+                     String(date.getMinutes()).padStart(2, '0') + ':' +
+                     String(date.getSeconds()).padStart(2, '0');
           }
+          
+          console.log('当前批次数据:', JSON.stringify(batch));
+          
+          // 确保有process_type属性，从多个可能的来源获取
+          const processType = batch.processName || batch.process_type || '';
+          console.log('处理后的流程类型:', processType);
           
           return {
             ...batch,
-            timestamp
+            timestamp,
+            // 确保流程类型字段存在
+            process_type: processType
           };
         });
       });
+      
+      // 获取流程类型的键名
+      const getProcessKey = (row) => {
+        // 从多个可能的属性中获取流程类型
+        const processType = row.processName || row.process_type || '';
+        
+        // 将中文流程名称映射到英文键名
+        if (processType === '入库') {
+          return 'storage';
+        } else if (processType === '贴膜') {
+          return 'film';
+        } else if (processType === '切割') {
+          return 'cutting';
+        } else if (processType === '检验') {
+          return 'inspection';
+        } else if (processType === '出货') {
+          return 'shipping';
+        } else {
+          // 尝试使用原始值作为键名
+          return processType;
+        }
+      };
+      
+      // 根据行数据获取完整的流程样式
+      const getProcessStyle = (row) => {
+        // 从多个可能的属性中获取流程类型
+        const processType = row.processName || row.process_type || '';
+        console.log('应用样式的流程类型:', processType);
+        
+        let processKey = '';
+        
+        // 将中文流程名称映射到英文键名
+        if (processType === '入库') {
+          processKey = 'storage';
+        } else if (processType === '贴膜') {
+          processKey = 'film';
+        } else if (processType === '切割') {
+          processKey = 'cutting';
+        } else if (processType === '检验') {
+          processKey = 'inspection';
+        } else if (processType === '出货') {
+          processKey = 'shipping';
+        } else {
+          // 尝试使用原始值作为键名
+          processKey = processType;
+        }
+        
+        console.log('映射后的流程键名:', processKey);
+        
+        return {
+          backgroundColor: processColors[processKey] || '#409EFF',
+          color: 'white',
+          fontWeight: 'bold',
+          border: 'none'
+        };
+      };
       
       // 计算各公司批次完成率
       const calculateCompanyCompletionRates = () => {
@@ -211,7 +344,13 @@
         lastUpdateTime,
         completedCount,
         companyCompletionRates,
-        getProgressColor
+        getProgressColor,
+        getProcessLabel,
+        getProcessTextColor,
+        getProcessBgColor,
+        getProcessBorderColor,
+        getProcessStyle,
+        getProcessKey
       }
     }
   }
@@ -344,5 +483,24 @@
   
   .dashboard-container :deep(.el-card__body) {
     padding: 10px;
+  }
+  
+  /* 流程标签样式 */
+  .process-tag {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 12px;
+    width: auto;
+    min-width: 40px;
+    display: inline-block;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+  }
+  
+  .process-tag:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   }
   </style>

@@ -104,8 +104,7 @@ onMounted(() => {
       <el-table-column 
         prop="batch_id" 
         label="批次ID" 
-        width="120" 
-        sortable
+        width="120"
       />
       <el-table-column 
         prop="operator" 
@@ -115,8 +114,7 @@ onMounted(() => {
       <el-table-column 
         prop="timestamp" 
         label="操作时间" 
-        width="180" 
-        sortable
+        width="180"
       />
       
       <!-- 基于不同的流程类型显示不同的额外字段 -->
