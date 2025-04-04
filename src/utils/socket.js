@@ -101,7 +101,8 @@ export const setupSocketListeners = () => {
       // 确保时间格式正确
       const formattedRecords = deepFormatDates(records);
       processData[processType].value = formattedRecords;
-      lastUpdateTime.value = '北京时间：' + new Date().toLocaleString('zh-CN');
+      const now = new Date();
+      lastUpdateTime.value = `北京时间：${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
     }
   });
 
@@ -109,13 +110,15 @@ export const setupSocketListeners = () => {
   socket.on('recent_batches', (data) => {
     // 确保时间格式正确
     recentBatches.value = deepFormatDates(data);
-    lastUpdateTime.value = '北京时间：' + new Date().toLocaleString('zh-CN');
+    const now = new Date();
+    lastUpdateTime.value = `北京时间：${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
   });
 
   // 今日统计数据更新
   socket.on('process_counts', (data) => {
     processCounts.value = data;
-    lastUpdateTime.value = '北京时间：' + new Date().toLocaleString('zh-CN');
+    const now = new Date();
+    lastUpdateTime.value = `北京时间：${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
   });
 };
 
