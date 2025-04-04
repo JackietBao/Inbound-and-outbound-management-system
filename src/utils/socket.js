@@ -56,7 +56,7 @@ function deepFormatDates(obj) {
 }
 
 // 创建Socket实例
-const socket = io('http://192.168.232.153:3000', {
+const socket = io('http://192.168.0.104:3000', {
   autoConnect: false,
   reconnection: true,
   reconnectionAttempts: Infinity
